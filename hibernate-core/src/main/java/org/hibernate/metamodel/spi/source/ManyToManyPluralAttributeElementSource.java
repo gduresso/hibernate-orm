@@ -37,7 +37,7 @@ public interface ManyToManyPluralAttributeElementSource
 
 	public Collection<String> getReferencedColumnNames();
 
-	public List<RelationalValueSource> relationalValueSources(); // these describe the "outgoing" link
+	public List<RelationalValueSource> elementRelationalValueSources();
 
 	public boolean isNotFoundAnException();
 

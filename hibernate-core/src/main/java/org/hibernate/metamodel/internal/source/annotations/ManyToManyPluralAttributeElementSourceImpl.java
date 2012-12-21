@@ -49,6 +49,8 @@ public class ManyToManyPluralAttributeElementSourceImpl implements ManyToManyPlu
 	private final PluralAssociationAttribute associationAttribute;
 	private final List<RelationalValueSource> relationalValueSources
 			= new ArrayList<RelationalValueSource>();
+	private final List<RelationalValueSource> elementRelationalValueSources
+	= new ArrayList<RelationalValueSource>();
 	private final Collection<String> referencedColumnNames
 			= new HashSet<String>();
 	private final Iterable<CascadeStyle> cascadeStyles;
@@ -60,21 +62,12 @@ public class ManyToManyPluralAttributeElementSourceImpl implements ManyToManyPlu
 		for ( Column column : associationAttribute.getJoinColumnValues() ) {
 			relationalValueSources.add( new ColumnSourceImpl( 
 					associationAttribute, null, column ) );
+			referencedColumnNames.add( column.getReferencedColumnName() );
 		}
 		for ( Column column : associationAttribute.getInverseJoinColumnValues() ) {
-			relationalValueSources.add( new ColumnSourceImpl( 
+			elementRelationalValueSources.add( new ColumnSourceImpl( 
 					associationAttribute, null, column ) );
-		}
-		
-		for ( Column column : associationAttribute.getJoinColumnValues() ) {
-			if ( column.getReferencedColumnName() != null ) {
-				referencedColumnNames.add( column.getReferencedColumnName() );
-			}
-		}
-		for ( Column column : associationAttribute.getInverseJoinColumnValues() ) {
-			if ( column.getReferencedColumnName() != null ) {
-				referencedColumnNames.add( column.getReferencedColumnName() );
-			}
+			referencedColumnNames.add( column.getReferencedColumnName() );
 		}
 		
 		cascadeStyles = EnumConversionHelper.cascadeTypeToCascadeStyleSet(
@@ -105,6 +98,11 @@ public class ManyToManyPluralAttributeElementSourceImpl implements ManyToManyPlu
 	}
 
 	@Override
+	public List<RelationalValueSource> elementRelationalValueSources() {
+		return elementRelationalValueSources;
+	}
+
+	@Override
 	public Iterable<CascadeStyle> getCascadeStyles() {
 		return cascadeStyles;
 	}
@@ -116,7 +114,8 @@ public class ManyToManyPluralAttributeElementSourceImpl implements ManyToManyPlu
 
 	@Override
 	public String getExplicitForeignKeyName() {
-		return associationAttribute.getInverseForeignKeyName();
+		// TODO: Need to handle getInverseForeignKeyName somehow?
+		return associationAttribute.getExplicitForeignKeyName();
 	}
 
 	@Override
@@ -166,8 +165,8 @@ public class ManyToManyPluralAttributeElementSourceImpl implements ManyToManyPlu
 		return false;
 	}
 
-	// TODO: This obviously won't work.  We need a new way to handle
-	// inverse foreign key resolution.
+	// TODO: This won't work with the addition of element join column values.
+	// The whole delegate setup needs refactored badly.
 	public class AnnotationJoinColumnResolutionDelegate
 			implements ForeignKeyContributingSource.JoinColumnResolutionDelegate {
 		private final String logicalJoinTableName;
@@ -191,18 +190,6 @@ public class ManyToManyPluralAttributeElementSourceImpl implements ManyToManyPlu
 				);
 				values.add( resolvedColumn );
 			}
-//			for ( Column column : associationAttribute.getInverseJoinColumnValues() ) {
-//				if ( column.getReferencedColumnName() == null ) {
-//					return context.resolveRelationalValuesForAttribute( null );
-//				}
-//				org.hibernate.metamodel.spi.relational.Column resolvedColumn = context.resolveColumn(
-//						column.getReferencedColumnName(),
-//						logicalJoinTableName,
-//						null,
-//						null
-//				);
-//				values.add( resolvedColumn );
-//			}
 			return values;
 		}
 

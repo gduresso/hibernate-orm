@@ -118,6 +118,12 @@ public class ManyToManyPluralAttributeElementSourceImpl
 	public List<RelationalValueSource> relationalValueSources() {
 		return valueSources;
 	}
+	
+	@Override
+	public List<RelationalValueSource> elementRelationalValueSources() {
+		// annotations only
+		return Collections.emptyList();
+	}
 
 	@Override
 	public boolean isNotFoundAnException() {
