@@ -70,7 +70,7 @@ public class DefaultUniqueDelegate implements UniqueDelegate {
 				.append( uniqueKey.getTable().getQualifiedName(
 						dialect, defaultCatalog, defaultSchema ) )
 				.append( " add constraint " )
-				.append( uniqueKey.getName() )
+				.append( uniqueKey.getName(dialect) )
 				.append( uniqueConstraintSql( uniqueKey ) )
 				.toString();
 	}
@@ -96,7 +96,7 @@ public class DefaultUniqueDelegate implements UniqueDelegate {
 				.append( uniqueKey.getTable().getQualifiedName(
 						dialect, defaultCatalog, defaultSchema ) )
 				.append( " drop constraint " )
-				.append( dialect.quote( uniqueKey.getName() ) )
+				.append( dialect.quote( uniqueKey.getName(dialect) ) )
 				.toString();
 	}
 	

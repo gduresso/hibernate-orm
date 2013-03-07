@@ -47,12 +47,11 @@ public class Column implements Selectable, Serializable, Cloneable {
 	private int scale=DEFAULT_SCALE;
 	private Value value;
 	private int typeIndex = 0;
-	private String name;
+	private ObjectName objName;
 	private boolean nullable=true;
 	private boolean unique=false;
 	private String sqlType;
 	private Integer sqlTypeCode;
-	private boolean quoted=false;
 	int uniqueInteger;
 	private String checkConstraint;
 	private String comment;
@@ -80,32 +79,19 @@ public class Column implements Selectable, Serializable, Cloneable {
 		this.value= value;
 	}
 	public String getName() {
-		return name;
+		return objName == null ? null : objName.unquoted();
 	}
 	public void setName(String name) {
-		if (
-			StringHelper.isNotEmpty( name ) &&
-			Dialect.QUOTE.indexOf( name.charAt(0) ) > -1 //TODO: deprecated, remove eventually
-		) {
-			quoted=true;
-			this.name=name.substring( 1, name.length()-1 );
-		}
-		else {
-			this.name = name;
-		}
+		objName = new ObjectName( name );
 	}
 
 	/** returns quoted name as it would be in the mapping file. */
 	public String getQuotedName() {
-		return quoted ?
-				"`" + name + "`" :
-				name;
+		return objName == null ? null : objName.quoted();
 	}
 
 	public String getQuotedName(Dialect d) {
-		return quoted ?
-			d.openQuote() + name + d.closeQuote() :
-			name;
+		return objName == null ? null : objName.quoted(d);
 	}
 	
 	/**
@@ -114,6 +100,7 @@ public class Column implements Selectable, Serializable, Cloneable {
 	 * in length.
 	 */
 	public String getAlias(Dialect dialect) {
+		String name = objName.unquoted();
 		String alias = name;
 		String unique = Integer.toString(uniqueInteger) + '_';
 		int lastLetter = StringHelper.lastIndexOfLetter(name);
@@ -127,7 +114,7 @@ public class Column implements Selectable, Serializable, Cloneable {
 			alias = alias.substring( 0, dialect.getMaxAliasLength() - unique.length() );
 		}
 		boolean useRawName = name.equals(alias) && 
-			!quoted && 
+			!objName.isQuoted() && 
 			!name.toLowerCase().equals("rowid");
 		if ( useRawName ) {
 			return alias;
@@ -165,9 +152,7 @@ public class Column implements Selectable, Serializable, Cloneable {
 
 	//used also for generation of FK names!
 	public int hashCode() {
-		return isQuoted() ?
-			name.hashCode() :
-			name.toLowerCase().hashCode();
+		return objName.hashCode();
 	}
 
 	public boolean equals(Object object) {
@@ -178,9 +163,7 @@ public class Column implements Selectable, Serializable, Cloneable {
 		if (null == column) return false;
 		if (this == column) return true;
 
-		return isQuoted() ? 
-			name.equals(column.name) :
-			name.equalsIgnoreCase(column.name);
+		return objName.equals( column.getName() );
 	}
 
     public int getSqlTypeCode(Mapping mapping) throws MappingException {
@@ -195,7 +178,7 @@ public class Column implements Selectable, Serializable, Cloneable {
         catch ( Exception e ) {
             throw new MappingException(
                     "Could not determine type for column " +
-                            name +
+                    		objName.unquoted() +
                             " of type " +
                             type.getClass().getName() +
                             ": " +
@@ -242,7 +225,7 @@ public class Column implements Selectable, Serializable, Cloneable {
 	}
 
 	public boolean isQuoted() {
-		return quoted;
+		return objName.isQuoted();
 	}
 
 	public String toString() {
@@ -337,7 +320,7 @@ public class Column implements Selectable, Serializable, Cloneable {
 	}
 
 	public String getCanonicalName() {
-		return quoted ? name : name.toLowerCase();
+		return objName.canonicalName();
 	}
 
 	/**

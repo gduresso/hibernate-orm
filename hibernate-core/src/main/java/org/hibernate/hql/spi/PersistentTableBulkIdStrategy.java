@@ -105,13 +105,8 @@ public class PersistentTableBulkIdStrategy implements MultiTableBulkIdStrategy {
 	}
 
 	protected Table generateIdTableDefinition(PersistentClass entityMapping) {
-		Table idTable = new Table( entityMapping.getTemporaryIdTableName() );
-		if ( catalog != null ) {
-			idTable.setCatalog( catalog );
-		}
-		if ( schema != null ) {
-			idTable.setSchema( schema );
-		}
+		Table idTable = new Table( catalog, schema,
+				entityMapping.getTemporaryIdTableName() );
 		Iterator itr = entityMapping.getTable().getPrimaryKey().getColumnIterator();
 		while( itr.hasNext() ) {
 			Column column = (Column) itr.next();

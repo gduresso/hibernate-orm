@@ -177,13 +177,10 @@ public class DatabaseMetadata {
  			} else {
  				String[] strings = StringHelper.split(".", (String) key);
  				if(strings.length==3) {
-					tbl = new Table(strings[2]);
-					tbl.setCatalog(strings[0]);
-					tbl.setSchema(strings[1]);
+					tbl = new Table(strings[0], strings[1], strings[2]);
 					return getTableMetadata( tbl.getName(), tbl.getSchema(), tbl.getCatalog(), tbl.isQuoted() ) != null;
  				} else if (strings.length==2) {
-					tbl = new Table(strings[1]);
-					tbl.setSchema(strings[0]);
+ 					tbl = new Table(null, strings[0], strings[1]);
 					return getTableMetadata( tbl.getName(), tbl.getSchema(), tbl.getCatalog(), tbl.isQuoted() ) != null;
  				}
  			}

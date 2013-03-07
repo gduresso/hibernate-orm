@@ -2717,8 +2717,8 @@ public class Configuration implements Serializable {
 				table = new Table();
 				table.setAbstract( isAbstract );
 				table.setName( name );
-				table.setSchema( schema );
-				table.setCatalog( catalog );
+				table.setSchema( schema ); 
+				table.setCatalog( catalog ); 
 				table.setSubselect( subselect );
 				tables.put( key, table );
 			}
@@ -2750,8 +2750,8 @@ public class Configuration implements Serializable {
 			Table table = new DenormalizedTable( includedTable );
 			table.setAbstract( isAbstract );
 			table.setName( name );
-			table.setSchema( schema );
-			table.setCatalog( catalog );
+			table.setSchema( schema ); 
+			table.setCatalog( catalog ); 
 			table.setSubselect( subselect );
 
 			tables.put( key, table );

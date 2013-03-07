@@ -382,4 +382,9 @@ public class Oracle9Dialect extends Dialect {
 	public String getNotExpression( String expression ) {
 		return "not (" + expression + ")";
 	}
+	
+	@Override
+	public int getMaxIdentifierLength() {
+		return 30;
+	}
 }

@@ -45,9 +45,7 @@ import org.hibernate.tool.hbm2ddl.TableMetadata;
  */
 public class Table implements RelationalModel, Serializable {
 
-	private String name;
-	private String schema;
-	private String catalog;
+	private ObjectName objName = new ObjectName();
 	/**
 	 * contains all columns, including the primary key
 	 */
@@ -58,7 +56,7 @@ public class Table implements RelationalModel, Serializable {
 	private Map foreignKeys = new LinkedHashMap();
 	private Map<String,UniqueKey> uniqueKeys = new LinkedHashMap<String,UniqueKey>();
 	private int uniqueInteger;
-	private boolean quoted;
+	private boolean nameQuoted;
 	private boolean schemaQuoted;
 	private boolean catalogQuoted;
 	private List checkConstraints = new ArrayList();
@@ -101,25 +99,22 @@ public class Table implements RelationalModel, Serializable {
 	public Table() { }
 
 	public Table(String name) {
+		this(null, null, name);
+	}
+	public Table(String catalog, String schema, String name) {
 		this();
-		setName( name );
+		objName = new ObjectName(catalog, schema, name);
 	}
 
 	public String getQualifiedName(Dialect dialect, String defaultCatalog, String defaultSchema) {
 		if ( subselect != null ) {
 			return "( " + subselect + " )";
 		}
-		String quotedName = getQuotedName( dialect );
-		String usedSchema = schema == null ?
-				defaultSchema :
-				getQuotedSchema( dialect );
-		String usedCatalog = catalog == null ?
-				defaultCatalog :
-				getQuotedCatalog( dialect );
-		return qualify( usedCatalog, usedSchema, quotedName );
+		return objName.quoted( dialect, defaultCatalog, defaultSchema );
 	}
 
 	public static String qualify(String catalog, String schema, String table) {
+		// TODO: Use ObjectName here?
 		StringBuilder qualifiedName = new StringBuilder();
 		if ( catalog != null ) {
 			qualifiedName.append( catalog ).append( '.' );
@@ -130,60 +125,34 @@ public class Table implements RelationalModel, Serializable {
 		return qualifiedName.append( table ).toString();
 	}
 
-	public String getName() {
-		return name;
-	}
-
 	/**
 	 * returns quoted name as it would be in the mapping file.
 	 */
 	public String getQuotedName() {
-		return quoted ?
-				"`" + name + "`" :
-				name;
+		return objName.getSeg3Quoted();
 	}
 
 	public String getQuotedName(Dialect dialect) {
-		return quoted ?
-				dialect.openQuote() + name + dialect.closeQuote() :
-				name;
+		return objName.getSeg3Quoted( dialect );
 	}
 
 	/**
 	 * returns quoted name as it is in the mapping file.
 	 */
 	public String getQuotedSchema() {
-		return schemaQuoted ?
-				"`" + schema + "`" :
-				schema;
+		return objName.getSeg2Quoted();
 	}
 
 	public String getQuotedSchema(Dialect dialect) {
-		return schemaQuoted ?
-				dialect.openQuote() + schema + dialect.closeQuote() :
-				schema;
+		return objName.getSeg2Quoted( dialect );
 	}
 
 	public String getQuotedCatalog() {
-		return catalogQuoted ?
-				"`" + catalog + "`" :
-				catalog;
+		return objName.getSeg1Quoted();
 	}
 
 	public String getQuotedCatalog(Dialect dialect) {
-		return catalogQuoted ?
-				dialect.openQuote() + catalog + dialect.closeQuote() :
-				catalog;
-	}
-
-	public void setName(String name) {
-		if ( name.charAt( 0 ) == '`' ) {
-			quoted = true;
-			this.name = name.substring( 1, name.length() - 1 );
-		}
-		else {
-			this.name = name;
-		}
+		return objName.getSeg1Quoted( dialect );
 	}
 
 	/**
@@ -326,14 +295,7 @@ public class Table implements RelationalModel, Serializable {
 
 	@Override
 	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = prime * result
-			+ ((catalog == null) ? 0 : isCatalogQuoted() ? catalog.hashCode() : catalog.toLowerCase().hashCode());
-		result = prime * result + ((name == null) ? 0 : isQuoted() ? name.hashCode() : name.toLowerCase().hashCode());
-		result = prime * result
-			+ ((schema == null) ? 0 : isSchemaQuoted() ? schema.hashCode() : schema.toLowerCase().hashCode());
-		return result;
+		return objName.hashCode();
 	}
 
 	@Override
@@ -348,10 +310,9 @@ public class Table implements RelationalModel, Serializable {
 		if (this == table) {
 			return true;
 		}
-
-		return isQuoted() ? name.equals(table.getName()) : name.equalsIgnoreCase(table.getName())
-			&& ((schema == null && table.getSchema() != null) ? false : (schema == null) ? true : isSchemaQuoted() ? schema.equals(table.getSchema()) : schema.equalsIgnoreCase(table.getSchema()))
-			&& ((catalog == null && table.getCatalog() != null) ? false : (catalog == null) ? true : isCatalogQuoted() ? catalog.equals(table.getCatalog()) : catalog.equalsIgnoreCase(table.getCatalog()));
+		
+		return objName.equals( new ObjectName(
+				table.getCatalog(), table.getSchema(), table.getName() ) );
 	}
 	
 	public void validateColumns(Dialect dialect, Mapping mapping, TableMetadata tableInfo) {
@@ -424,7 +385,7 @@ public class Table implements RelationalModel, Serializable {
 				if ( column.isUnique() ) {
 					uniqueIndexInteger++;
 					UniqueKey uk = getOrCreateUniqueKey( 
-							"UK_" + name + "_" + uniqueIndexInteger);
+							"UK_" + getName() + "_" + uniqueIndexInteger);
 					uk.addColumn( column );
 					alter.append( dialect.getUniqueDelegate()
 							.applyUniqueToColumn( column ) );
@@ -456,7 +417,7 @@ public class Table implements RelationalModel, Serializable {
 	public String sqlTemporaryTableCreateString(Dialect dialect, Mapping mapping) throws HibernateException {
 		StringBuilder buffer = new StringBuilder( dialect.getCreateTemporaryTableString() )
 				.append( ' ' )
-				.append( name )
+				.append( getName() )
 				.append( " (" );
 		Iterator itr = getColumnIterator();
 		while ( itr.hasNext() ) {
@@ -529,7 +490,7 @@ public class Table implements RelationalModel, Serializable {
 			if ( col.isUnique() ) {
 				uniqueIndexInteger++;
 				UniqueKey uk = getOrCreateUniqueKey( 
-						"uc_" + name + "_" + uniqueIndexInteger);
+						"UK_" + getName() + "_" + uniqueIndexInteger);
 				uk.addColumn( col );
 				buf.append( dialect.getUniqueDelegate()
 						.applyUniqueToColumn( col ) );
@@ -698,37 +659,32 @@ public class Table implements RelationalModel, Serializable {
 		while ( iterator.hasNext() ) {
 			result += iterator.next().hashCode();
 		}
-		return ( Integer.toHexString( name.hashCode() ) + Integer.toHexString( result ) ).toUpperCase();
+		// TODO: This will need updated for dialect length restrictions.
+		return ( Integer.toHexString( getName().hashCode() ) + Integer.toHexString( result ) ).toUpperCase();
 	}
 
-
+	public String getName() {
+		return objName.getSeg3();
+	}
+	
+	public void setName(String name) {
+		objName.setSeg3( name );
+	}
 
 	public String getSchema() {
-		return schema;
+		return objName.getSeg2();
 	}
 
 	public void setSchema(String schema) {
-		if ( schema != null && schema.charAt( 0 ) == '`' ) {
-			schemaQuoted = true;
-			this.schema = schema.substring( 1, schema.length() - 1 );
-		}
-		else {
-			this.schema = schema;
-		}
+		objName.setSeg2( schema );
 	}
 
 	public String getCatalog() {
-		return catalog;
+		return objName.getSeg1();
 	}
 
 	public void setCatalog(String catalog) {
-		if ( catalog != null && catalog.charAt( 0 ) == '`' ) {
-			catalogQuoted = true;
-			this.catalog = catalog.substring( 1, catalog.length() - 1 );
-		}
-		else {
-			this.catalog = catalog;
-		}
+		objName.setSeg1( catalog );
 	}
 
 	// This must be done outside of Table, rather than statically, to ensure
@@ -757,11 +713,11 @@ public class Table implements RelationalModel, Serializable {
 	}
 
 	public boolean isQuoted() {
-		return quoted;
+		return nameQuoted;
 	}
 
-	public void setQuoted(boolean quoted) {
-		this.quoted = quoted;
+	public void setQuoted(boolean nameQuoted) {
+		this.nameQuoted = nameQuoted;
 	}
 
 	public void addCheckConstraint(String constraint) {

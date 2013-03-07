@@ -44,7 +44,7 @@ public class Index implements RelationalModel, Serializable {
 	private Table table;
 	private List<Column> columns = new ArrayList<Column>();
 	private java.util.Map<Column, String> columnOrderMap = new HashMap<Column, String>(  );
-	private String name;
+	private ObjectName objName;
 
 	public String sqlCreateString(Dialect dialect, Mapping mapping, String defaultCatalog, String defaultSchema)
 			throws HibernateException {
@@ -135,7 +135,7 @@ public class Index implements RelationalModel, Serializable {
 		return "drop index " +
 				StringHelper.qualify(
 						table.getQualifiedName( dialect, defaultCatalog, defaultSchema ),
-						name
+						objName.quoted()
 				);
 	}
 
@@ -179,11 +179,11 @@ public class Index implements RelationalModel, Serializable {
 	}
 
 	public String getName() {
-		return name;
+		return objName.quoted();
 	}
 
 	public void setName(String name) {
-		this.name = name;
+		this.objName = new ObjectName( name );
 	}
 
 	public String toString() {

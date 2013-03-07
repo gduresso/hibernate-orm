@@ -37,16 +37,18 @@ import org.hibernate.engine.spi.Mapping;
  */
 public abstract class Constraint implements RelationalModel, Serializable {
 
-	private String name;
+	private ObjectName objName;
 	private final List<Column> columns = new ArrayList<Column>();
 	private Table table;
 
 	public String getName() {
-		return name;
+		return objName.quoted();
 	}
-
+	public String getName(Dialect dialect) {
+		return objName.quoted(dialect);
+	}
 	public void setName(String name) {
-		this.name = name;
+		this.objName = new ObjectName( name );
 	}
 
 	public void addColumn(Column column) {
@@ -102,7 +104,7 @@ public abstract class Constraint implements RelationalModel, Serializable {
 					.append( "alter table " )
 					.append( getTable().getQualifiedName( dialect, defaultCatalog, defaultSchema ) )
 					.append( " drop constraint " )
-					.append( dialect.quote( getName() ) )
+					.append( getName(dialect) )
 					.toString();
 		}
 		else {
@@ -112,7 +114,7 @@ public abstract class Constraint implements RelationalModel, Serializable {
 
 	public String sqlCreateString(Dialect dialect, Mapping p, String defaultCatalog, String defaultSchema) {
 		if ( isGenerated( dialect ) ) {
-			String constraintString = sqlConstraintString( dialect, getName(), defaultCatalog, defaultSchema );
+			String constraintString = sqlConstraintString( dialect, getName(dialect), defaultCatalog, defaultSchema );
 			StringBuilder buf = new StringBuilder( "alter table " )
 					.append( getTable().getQualifiedName( dialect, defaultCatalog, defaultSchema ) )
 					.append( constraintString );
@@ -131,6 +133,6 @@ public abstract class Constraint implements RelationalModel, Serializable {
 											   String defaultSchema);
 
 	public String toString() {
-		return getClass().getName() + '(' + getTable().getName() + getColumns() + ") as " + name;
+		return getClass().getName() + '(' + getTable().getName() + getColumns() + ") as " + objName.toString();
 	}
 }

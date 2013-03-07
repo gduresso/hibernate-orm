@@ -1805,6 +1805,16 @@ public abstract class Dialect implements ConversionContext {
 	}
 
 	/**
+	 * What is the maximum identifier length the Dialect supports?
+	 * 0 indicates no limit.
+	 *
+	 * @return The maximum length.
+	 */
+	public int getMaxIdentifierLength() {
+		return 0;
+	}
+
+	/**
 	 * The SQL literal value to which this database maps boolean values.
 	 *
 	 * @param bool The boolean value
