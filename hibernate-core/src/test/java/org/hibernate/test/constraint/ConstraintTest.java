@@ -20,57 +20,97 @@
  */
 package org.hibernate.test.constraint;
 
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
-import javax.persistence.Table;
-
-import org.junit.Test;
-
-import org.hibernate.metamodel.spi.relational.Column;
-import org.hibernate.test.util.SchemaUtil;
-import org.hibernate.testing.TestForIssue;
-import org.hibernate.testing.junit4.BaseCoreFunctionalTestCase;
-
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-/**
- * HHH-7797 re-wrote the way dialects handle unique constraints.  Test
- * variations of unique & not null to ensure the constraints are created
- * correctly for each dialect.
- * 
- * @author Brett Meyer
- */
-@TestForIssue( jiraKey = "HHH-7797" )
+import java.util.Iterator;
+
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
+import javax.persistence.ManyToOne;
+import javax.persistence.Table;
+import javax.persistence.UniqueConstraint;
+
+import org.hibernate.metamodel.spi.relational.Column;
+import org.hibernate.metamodel.spi.relational.ForeignKey;
+import org.hibernate.metamodel.spi.relational.TableSpecification;
+import org.hibernate.metamodel.spi.relational.UniqueKey;
+import org.hibernate.test.util.SchemaUtil;
+import org.hibernate.testing.TestForIssue;
+import org.hibernate.testing.junit4.BaseCoreFunctionalTestCase;
+import org.junit.Test;
+
 public class ConstraintTest extends BaseCoreFunctionalTestCase {
+	
+	private static final int MAX_NAME_LENGTH = 30;
+	
+	private static final String EXPLICIT_FK_NAME = "fk_explicit";
+	
+	private static final String EXPLICIT_UK_NAME = "uk_explicit";
 	
 	@Override
 	protected Class<?>[] getAnnotatedClasses() {
 		return new Class<?>[] {
-				Entity1.class
+				DataPoint.class, DataPoint2.class
 		};
 	}
 	
 	@Test
 	public void testConstraints() {
 		
-		Column column = SchemaUtil.getColumn( Entity1.class, "foo1", metadata() );
+		Column column = SchemaUtil.getColumn( DataPoint.class, "foo1", metadata() );
 		assertFalse( column.isNullable() );
 		assertTrue( column.isUnique() );
 
-		column = SchemaUtil.getColumn( Entity1.class, "foo2", metadata() );
+		column = SchemaUtil.getColumn( DataPoint.class, "foo2", metadata() );
 		assertTrue( column.isNullable() );
 		assertTrue( column.isUnique() );
 
-		column = SchemaUtil.getColumn( Entity1.class, "id", metadata() );
+		column = SchemaUtil.getColumn( DataPoint.class, "id", metadata() );
+		
 		assertFalse( column.isNullable() );
 		assertTrue( column.isUnique() );
 	}
 	
+	@Test
+	@TestForIssue( jiraKey = "HHH-1904" )
+	public void testConstraintNameLength() {
+		TableSpecification table = SchemaUtil.getTable( DataPoint2.class, metadata() );
+		
+		Iterator<ForeignKey> fkItr = table.getForeignKeys().iterator();
+		while (fkItr.hasNext()) {
+			ForeignKey fk = fkItr.next();
+			assertTrue( fk.getName().length() <= MAX_NAME_LENGTH );
+			
+			// ensure the randomly generated constraint name doesn't
+			// happen if explicitly given
+			Column column = fk.getColumns().get( 0 );
+			if ( column.getColumnName().getText().equals( "explicitDataPoint" ) ) {
+				assertEquals( fk.getName(), EXPLICIT_FK_NAME );
+			}
+		}
+		
+		Iterator<UniqueKey> ukItr = table.getUniqueKeys().iterator();
+		while (ukItr.hasNext()) {
+			UniqueKey uk = ukItr.next();
+			assertTrue( uk.getName().length() <= MAX_NAME_LENGTH );
+			
+			// ensure the randomly generated constraint name doesn't
+			// happen if explicitly given
+			Column column = uk.getColumns().get( 0 );
+			if ( column.getColumnName().getText().equals( "explicitString" ) ) {
+				assertEquals( uk.getName(), EXPLICIT_UK_NAME );
+			}
+		}
+	}
+	
 	@Entity
-	@Table( name = "Entity1" )
-	public static class Entity1 {
+	@Table( name = "DataPoint", uniqueConstraints = {
+			@UniqueConstraint( name = EXPLICIT_UK_NAME, columnNames = { "explicitString" } )
+	} )
+	public static class DataPoint {
 		@Id
 		@GeneratedValue
 		@javax.persistence.Column( nullable = false, unique = true)
@@ -81,5 +121,22 @@ public class ConstraintTest extends BaseCoreFunctionalTestCase {
 		
 		@javax.persistence.Column( nullable = true, unique = true)
 		public String foo2;
+		
+		public String explicitString;
+	}
+	
+	@Entity
+	@Table( name = "DataPoint2" )
+	public static class DataPoint2 {
+		@Id
+		@GeneratedValue
+		public long id;
+		
+		@ManyToOne
+		public DataPoint dp;
+		
+		@ManyToOne
+		@org.hibernate.annotations.ForeignKey(name = EXPLICIT_FK_NAME)
+		public DataPoint explicitDataPoint;
 	}
 }
