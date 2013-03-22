@@ -59,8 +59,8 @@ public class DB2UniqueDelegate extends DefaultUniqueDelegate {
 			// TODO: This borrows from Index's old way of doing things.  This
 			// should be using StandardIndexExporter.  However, not all callers
 			// have JdbcEnvironment available.  We'll need to refactor a bit...
-			String keyName = dialect.qualifyIndexName() ? uniqueKey.getName()
-					: StringHelper.unqualify( uniqueKey.getName() );
+			String keyName = dialect.qualifyIndexName() ? uniqueKey.getExportedName()
+					: StringHelper.unqualify( uniqueKey.getExportedName() );
 			StringBuilder buf = new StringBuilder( "create unique index " )
 					.append( keyName ).append( " on " )
 					.append( uniqueKey.getTable().getQualifiedName( dialect ) )
@@ -103,7 +103,7 @@ public class DB2UniqueDelegate extends DefaultUniqueDelegate {
 			// have JdbcEnvironment available.  We'll need to refactor a bit...
 			return "drop index " + StringHelper.qualify(
 					uniqueKey.getTable().getQualifiedName( dialect ),
-							uniqueKey.getName() );
+							uniqueKey.getExportedName() );
 		} else {
 			return super.dropUniquesOnAlter( uniqueKey );
 		}

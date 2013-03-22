@@ -107,7 +107,7 @@ public class ForeignKey extends AbstractConstraint {
 				LOG.debugf(
 						"Attempt to map column [%s] to no target column after explicit target column(s) named for FK [name=%s]",
 						sourceColumn.toLoggableString(),
-						getOrGenerateName()
+						getExportedName()
 				);
 			}
 		}
@@ -118,7 +118,7 @@ public class ForeignKey extends AbstractConstraint {
 					LOG.debugf(
 							"Value mapping mismatch as part of FK [table=%s, name=%s] while adding source column [%s]",
 							getTable().toLoggableString(),
-							getOrGenerateName(),
+							getExportedName(),
 							sourceColumn.toLoggableString()
 					);
 				}
@@ -143,7 +143,7 @@ public class ForeignKey extends AbstractConstraint {
 
 	@Override
 	public String getExportIdentifier() {
-		return getSourceTable().getLoggableValueQualifier() + ".FK-" + getOrGenerateName();
+		return getSourceTable().getLoggableValueQualifier() + ".FK-" + getExportedName();
 	}
 
 	public ReferentialAction getDeleteRule() {
@@ -168,7 +168,7 @@ public class ForeignKey extends AbstractConstraint {
 				"alter table " +
 						getTable().getQualifiedName( dialect ) +
 						dialect.getDropForeignKeyString() +
-						getOrGenerateName()
+						getExportedName()
 		};
 	}
 
@@ -191,7 +191,7 @@ public class ForeignKey extends AbstractConstraint {
 		StringBuilder sb =
 				new StringBuilder(
 						dialect.getAddForeignKeyConstraintString(
-								getOrGenerateName(),
+								getExportedName(),
 								columnNames,
 								targetTable.getQualifiedName( dialect ),
 								targetColumnNames,

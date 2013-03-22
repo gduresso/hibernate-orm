@@ -82,26 +82,26 @@ public class ConstraintTest extends BaseCoreFunctionalTestCase {
 		Iterator<ForeignKey> fkItr = table.getForeignKeys().iterator();
 		while (fkItr.hasNext()) {
 			ForeignKey fk = fkItr.next();
-			assertTrue( fk.getName().length() <= MAX_NAME_LENGTH );
+			assertTrue( fk.getExportedName().length() <= MAX_NAME_LENGTH );
 			
 			// ensure the randomly generated constraint name doesn't
 			// happen if explicitly given
 			Column column = fk.getColumns().get( 0 );
 			if ( column.getColumnName().getText().equals( "explicitDataPoint" ) ) {
-				assertEquals( fk.getName(), EXPLICIT_FK_NAME );
+				assertEquals( fk.getExportedName(), EXPLICIT_FK_NAME );
 			}
 		}
 		
 		Iterator<UniqueKey> ukItr = table.getUniqueKeys().iterator();
 		while (ukItr.hasNext()) {
 			UniqueKey uk = ukItr.next();
-			assertTrue( uk.getName().length() <= MAX_NAME_LENGTH );
+			assertTrue( uk.getExportedName().length() <= MAX_NAME_LENGTH );
 			
 			// ensure the randomly generated constraint name doesn't
 			// happen if explicitly given
 			Column column = uk.getColumns().get( 0 );
 			if ( column.getColumnName().getText().equals( "explicitString" ) ) {
-				assertEquals( uk.getName(), EXPLICIT_UK_NAME );
+				assertEquals( uk.getExportedName(), EXPLICIT_UK_NAME );
 			}
 		}
 	}

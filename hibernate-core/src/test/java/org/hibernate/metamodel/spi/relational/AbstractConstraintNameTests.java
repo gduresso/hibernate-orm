@@ -147,10 +147,7 @@ public abstract class AbstractConstraintNameTests extends BaseUnitTestCase {
 	protected void checkGeneratedName(AbstractConstraint constraint) {
 		assertTrue(
 				constraint.generateName().startsWith(
-						constraint.getGeneratedNamePrefix() +
-								Integer.toHexString(
-										constraint.getTable().getLogicalName().hashCode()
-								).toUpperCase()
+						constraint.getGeneratedNamePrefix()
 				)
 		);
 	}

@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.hibernate.dialect.Dialect;
+import org.hibernate.internal.util.StringHelper;
 
 /**
  * Support for writing {@link Constraint} implementations
@@ -38,11 +39,16 @@ import org.hibernate.dialect.Dialect;
  *
  * @author Steve Ebersole
  * @author Gail Badner
+ * @author Brett Meyer
  */
 public abstract class AbstractConstraint implements Constraint {
 	private final TableSpecification table;
 	private String name;
 	private final Map<Identifier, Column> columnMap = new LinkedHashMap<Identifier, Column>();
+	
+	// TODO: We might be able to combine name and generatedName, but for now
+	// stick with the convention of separating logical and physical names.
+	private String generatedName;
 
 	protected AbstractConstraint(TableSpecification table, String name) {
 		this.table = table;
@@ -96,16 +102,11 @@ public abstract class AbstractConstraint implements Constraint {
 		return name != null ? name : generateName();
 	}
 
-	protected String getOrGenerateName() {
-		return getExportedName();
-	}
-
 	protected String generateName() {
-		return new StringBuilder()
-				.append( getGeneratedNamePrefix() )
-				.append( Integer.toHexString( table.getLogicalName().hashCode() ).toUpperCase() )
-				.append( Integer.toHexString( generateConstraintColumnListId() ).toUpperCase() )
-				.toString();
+		if ( generatedName == null ) {
+			generatedName = StringHelper.randomFixedLengthHex( getGeneratedNamePrefix() );
+		}
+		return generatedName;
 	}
 
 	protected int generateConstraintColumnListId() {
@@ -157,7 +158,7 @@ public abstract class AbstractConstraint implements Constraint {
 						.append( "alter table " )
 						.append( getTable().getQualifiedName( dialect ) )
 						.append( " drop constraint " )
-						.append( dialect.quote( getOrGenerateName() ) )
+						.append( dialect.quote( getExportedName() ) )
 						.toString()
 			};
 		}
