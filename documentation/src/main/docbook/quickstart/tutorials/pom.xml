@@ -44,6 +44,8 @@
         <module>annotations</module>
         <module>entitymanager</module>
         <module>envers</module>
+        <module>EnterpriseOSGiJPA</module>
+        <module>ManualOSGi</module>
     </modules>
 
     <dependencies>
