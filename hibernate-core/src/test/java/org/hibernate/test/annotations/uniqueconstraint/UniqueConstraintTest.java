@@ -1,11 +1,13 @@
 package org.hibernate.test.annotations.uniqueconstraint;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.fail;
-
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Set;
+import org.hibernate.AnnotationException;
+import org.hibernate.JDBCException;
+import org.hibernate.Session;
+import org.hibernate.Transaction;
+import org.hibernate.cfg.Configuration;
+import org.hibernate.testing.TestForIssue;
+import org.hibernate.testing.junit4.BaseCoreFunctionalTestCase;
+import org.junit.Test;
 
 import javax.persistence.CollectionTable;
 import javax.persistence.Column;
@@ -17,15 +19,12 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
 
-import org.hibernate.AnnotationException;
-import org.hibernate.JDBCException;
-import org.hibernate.Session;
-import org.hibernate.Transaction;
-import org.hibernate.cfg.Configuration;
-import org.hibernate.testing.TestForIssue;
-import org.hibernate.testing.junit4.BaseCoreFunctionalTestCase;
-import org.junit.Test;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.fail;
 
 /**
  * @author Manuel Bernhardt <bernhardt.manuel@gmail.com>
@@ -42,7 +41,7 @@ public class UniqueConstraintTest extends BaseCoreFunctionalTestCase {
     }
 
 	@Test
-    public void testUniquenessConstraintWithSuperclassProperty() throws Exception {
+	public void testUniquenessConstraintWithSuperclassProperty() throws Exception {
         Session s = openSession();
         Transaction tx = s.beginTransaction();
         Room livingRoom = new Room();

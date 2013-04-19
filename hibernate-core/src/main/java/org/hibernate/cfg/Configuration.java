@@ -1129,10 +1129,9 @@ public class Configuration implements Serializable {
 											defaultSchema
 										)
 								);
-						}
 					}
 				}
-
+				}
 			}
 		}
 

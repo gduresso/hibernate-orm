@@ -2686,41 +2686,13 @@ public abstract class Dialect implements ConversionContext {
 	public boolean supportsNotNullUnique() {
 		return true;
 	}
-	
+
 	/**
-	 * Apply a hint to the query.  The entire query is provided, allowing the Dialect full control over the placement
-	 * and syntax of the hint.  By default, ignore the hint and simply return the query.
-	 * 
-	 * @param query The query to which to apply the hint.
-	 * @param hints The  hints to apply
-	 * @return The modified SQL
+	 * Does locking information get appended to SQL ?
+	 *
+	 * @return  boolean
 	 */
-	public String getQueryHintString(String query, List<String> hints) {
-		return query;
-	}
-	
-	/**
-	 * Certain dialects support a subset of ScrollModes.  Provide a default to be used by Criteria and Query.
-	 * 
-	 * @return ScrollMode
-	 */
-	public ScrollMode defaultScrollMode() {
-		return ScrollMode.SCROLL_INSENSITIVE;
-	}
-	
-	/**
-	 * Does this dialect support tuples in subqueries?  Ex:
-	 * delete from Table1 where (col1, col2) in (select col1, col2 from Table2)
-	 * 
-	 * @return boolean
-	 */
-	public boolean supportsTuplesInSubqueries() {
+	public boolean isLockAppended() {
 		return true;
 	}
-
-	public CallableStatementSupport getCallableStatementSupport() {
-		// most databases do not support returning cursors (ref_cursor)...
-		return StandardCallableStatementSupport.NO_REF_CURSOR_INSTANCE;
-	}
-
 }
