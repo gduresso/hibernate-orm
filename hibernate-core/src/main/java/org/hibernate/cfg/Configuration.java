@@ -141,7 +141,9 @@ import org.hibernate.proxy.EntityNotFoundDelegate;
 import org.hibernate.secure.spi.GrantedPermission;
 import org.hibernate.secure.spi.JaccPermissionDeclarations;
 import org.hibernate.service.ServiceRegistry;
+import org.hibernate.tool.hbm2ddl.ConstraintImplicitNamingStrategy;
 import org.hibernate.tool.hbm2ddl.DatabaseMetadata;
+import org.hibernate.tool.hbm2ddl.DefaultConstraintImplicitNamingStrategy;
 import org.hibernate.tool.hbm2ddl.IndexMetadata;
 import org.hibernate.tool.hbm2ddl.SchemaUpdateScript;
 import org.hibernate.tool.hbm2ddl.TableMetadata;
@@ -241,6 +243,7 @@ public class Configuration implements Serializable {
 
 	protected transient XMLHelper xmlHelper;
 	protected NamingStrategy namingStrategy;
+	protected ConstraintImplicitNamingStrategy constraintImplicitNamingStrategy;
 	private SessionFactoryObserver sessionFactoryObserver;
 
 	protected final SettingsFactory settingsFactory;
@@ -339,6 +342,7 @@ public class Configuration implements Serializable {
 		propertyRefResolver = new HashMap<String, String>();
 		caches = new ArrayList<CacheHolder>();
 		namingStrategy = EJB3NamingStrategy.INSTANCE;
+		constraintImplicitNamingStrategy = DefaultConstraintImplicitNamingStrategy.INSTANCE;
 		setEntityResolver( new EJB3DTDEntityResolver() );
 		anyMetaDefs = new HashMap<String, AnyMetaDef>();
 		propertiesAnnotatedWithMapsId = new HashMap<XClass, Map<String, PropertyData>>();
@@ -1398,22 +1402,14 @@ public class Configuration implements Serializable {
 			final Table table = tableListEntry.getKey();
 			final List<UniqueConstraintHolder> uniqueConstraints = tableListEntry.getValue();
 			for ( UniqueConstraintHolder holder : uniqueConstraints ) {
-				final String keyName = StringHelper.isEmpty( holder.getName() )
-						? StringHelper.randomFixedLengthHex("UK_")
-						: holder.getName();
-				buildUniqueKeyFromColumnNames( table, keyName, holder.getColumns() );
+				buildUniqueKeyFromColumnNames( table, holder.getName(), holder.getColumns() );
 			}
 		}
 		
 		for(Table table : jpaIndexHoldersByTable.keySet()){
 			final List<JPAIndexHolder> jpaIndexHolders = jpaIndexHoldersByTable.get( table );
-			int uniqueIndexPerTable = 0;
 			for ( JPAIndexHolder holder : jpaIndexHolders ) {
-				uniqueIndexPerTable++;
-				final String keyName = StringHelper.isEmpty( holder.getName() )
-						? "idx_"+table.getName()+"_" + uniqueIndexPerTable
-						: holder.getName();
-				buildUniqueKeyFromColumnNames( table, keyName, holder.getColumns(), holder.getOrdering(), holder.isUnique() );
+				buildUniqueKeyFromColumnNames( table, holder.getName(), holder.getColumns(), holder.getOrdering(), holder.isUnique() );
 			}
 		}
 		
@@ -2418,6 +2414,16 @@ public class Configuration implements Serializable {
 		return this;
 	}
 
+	public ConstraintImplicitNamingStrategy getConstraintImplicitNamingStrategy() {
+		return constraintImplicitNamingStrategy;
+	}
+
+	public Configuration setConstraintImplicitNamingStrategy(
+			ConstraintImplicitNamingStrategy constraintImplicitNamingStrategy) {
+		this.constraintImplicitNamingStrategy = constraintImplicitNamingStrategy;
+		return this;
+	}
+
 	/**
 	 * Retrieve the IdentifierGeneratorFactory in effect for this configuration.
 	 *
@@ -2709,6 +2715,15 @@ public class Configuration implements Serializable {
 
 		public void setNamingStrategy(NamingStrategy namingStrategy) {
 			Configuration.this.namingStrategy = namingStrategy;
+		}
+		
+		public ConstraintImplicitNamingStrategy getConstraintImplicitNamingStrategy() {
+			return constraintImplicitNamingStrategy;
+		}
+
+		public void setConstraintImplicitNamingStrategy(
+				ConstraintImplicitNamingStrategy constraintImplicitNamingStrategy) {
+			Configuration.this.constraintImplicitNamingStrategy = constraintImplicitNamingStrategy;
 		}
 
 		public TypeResolver getTypeResolver() {

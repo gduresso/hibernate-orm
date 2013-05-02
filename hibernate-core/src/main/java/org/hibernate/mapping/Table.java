@@ -69,15 +69,6 @@ public class Table implements RelationalModel, Serializable {
 	private boolean hasDenormalizedTables = false;
 	private String comment;
 	
-	/**
-	 * Natural ID columns must reside in one single UniqueKey within the Table.
-	 * To prevent separate UniqueKeys from being created, this keeps track of
-	 * a sole name used for all of them.  It's necessary since
-	 * AnnotationBinder#processElementAnnotations (static) creates the
-	 * UniqueKeys on a second pass using randomly-generated names.
-	 */
-	private final String naturalIdUniqueKeyName = StringHelper.randomFixedLengthHex( "UK_" );
-
 	static class ForeignKeyKey implements Serializable {
 		String referencedClassName;
 		List columns;
@@ -430,8 +421,7 @@ public class Table implements RelationalModel, Serializable {
 				}
 
 				if ( column.isUnique() ) {
-					UniqueKey uk = getOrCreateUniqueKey( 
-							StringHelper.randomFixedLengthHex("UK_"));
+					UniqueKey uk = getOrCreateUniqueKey(null);
 					uk.addColumn( column );
 					alter.append( dialect.getUniqueDelegate()
 							.getColumnDefinitionUniquenessFragment( column ) );
@@ -533,8 +523,7 @@ public class Table implements RelationalModel, Serializable {
 			}
 			
 			if ( col.isUnique() ) {
-				UniqueKey uk = getOrCreateUniqueKey( 
-						StringHelper.randomFixedLengthHex("UK_"));
+				UniqueKey uk = getOrCreateUniqueKey(null);
 				uk.addColumn( col );
 				buf.append( dialect.getUniqueDelegate()
 						.getColumnDefinitionUniquenessFragment( col ) );
@@ -630,8 +619,7 @@ public class Table implements RelationalModel, Serializable {
 	}
 
 	public UniqueKey createUniqueKey(List keyColumns) {
-		String keyName = StringHelper.randomFixedLengthHex("UK_");
-		UniqueKey uk = getOrCreateUniqueKey( keyName );
+		UniqueKey uk = getOrCreateUniqueKey( null );
 		uk.addColumns( keyColumns.iterator() );
 		return uk;
 	}
@@ -641,7 +629,7 @@ public class Table implements RelationalModel, Serializable {
 	}
 
 	public UniqueKey getOrCreateUniqueKey(String keyName) {
-		UniqueKey uk = uniqueKeys.get( keyName );
+		UniqueKey uk = StringHelper.isEmpty( keyName ) ? null : uniqueKeys.get( keyName );
 
 		if ( uk == null ) {
 			uk = new UniqueKey();
@@ -666,12 +654,7 @@ public class Table implements RelationalModel, Serializable {
 		ForeignKey fk = (ForeignKey) foreignKeys.get( key );
 		if ( fk == null ) {
 			fk = new ForeignKey();
-			if ( keyName != null ) {
-				fk.setName( keyName );
-			}
-			else {
-				fk.setName( StringHelper.randomFixedLengthHex("FK_") );
-			}
+			fk.setName( keyName );
 			fk.setTable( this );
 			foreignKeys.put( key, fk );
 			fk.setReferencedEntityName( referencedEntityName );
@@ -826,10 +809,6 @@ public class Table implements RelationalModel, Serializable {
 
 	public Iterator getCheckConstraintsIterator() {
 		return checkConstraints.iterator();
-	}
-	
-	public String getNaturalIdUniqueKeyName() {
-		return naturalIdUniqueKeyName;
 	}
 
 	public Iterator sqlCommentStrings(Dialect dialect, String defaultCatalog, String defaultSchema) {

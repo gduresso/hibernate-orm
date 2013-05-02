@@ -24,11 +24,15 @@
 package org.hibernate.mapping;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
+import java.util.TreeSet;
 
+import org.hibernate.cfg.Configuration;
 import org.hibernate.dialect.Dialect;
 import org.hibernate.engine.spi.Mapping;
+import org.hibernate.internal.util.StringHelper;
 
 /**
  * A relational constraint.
@@ -48,6 +52,19 @@ public abstract class Constraint implements RelationalModel, Serializable {
 	public void setName(String name) {
 		this.name = name;
 	}
+	
+	/**
+	 * If a constraint is not explicitly named, this is called to generate
+	 * a unique hash using the table and column names.
+	 */
+	public String getOrGenerateName(Configuration cfg) {
+		if ( StringHelper.isEmpty( name ) ) {
+			name = cfg.getConstraintImplicitNamingStrategy().generateConstraintName( this );
+		}
+		return name;
+	}
+	
+	public abstract String generatedConstraintNamePrefix();
 
 	public void addColumn(Column column) {
 		if ( !columns.contains( column ) ) columns.add( column );
@@ -125,6 +142,18 @@ public abstract class Constraint implements RelationalModel, Serializable {
 
 	public List getColumns() {
 		return columns;
+	}
+	
+	public TreeSet<Column> columnsAlphabetical() {
+		TreeSet<Column> columnsAlpha = new TreeSet<Column>( new ColumnComparator() );
+		columnsAlpha.addAll( columns );
+		return columnsAlpha;
+	}
+	
+	private class ColumnComparator implements Comparator<Column> {
+		public int compare(Column col1, Column col2) {
+			return col1.getName().compareTo( col2.getName() );
+		}
 	}
 
 	public abstract String sqlConstraintString(Dialect d, String constraintName, String defaultCatalog,

@@ -2108,12 +2108,18 @@ public final class AnnotationBinder {
 		if ( naturalIdAnn != null ) {
 			if ( joinColumns != null ) {
 				for ( Ejb3Column column : joinColumns ) {
-					column.addUniqueKey( column.getTable().getNaturalIdUniqueKeyName(), inSecondPass );
+					// TODO: This should use ConstraintImplicitNamingStrategy,
+					// but the second pass architecture won't make it easy.
+					String keyName = StringHelper.md5HashBase35( "UK_" + column.getTable().getName() + "_NaturalId");
+					column.addUniqueKey( keyName, inSecondPass );
 				}
 			}
 			else {
 				for ( Ejb3Column column : columns ) {
-					column.addUniqueKey( column.getTable().getNaturalIdUniqueKeyName(), inSecondPass );
+					// TODO: This should use ConstraintImplicitNamingStrategy,
+					// but the second pass architecture won't make it easy.
+					String keyName = StringHelper.md5HashBase35( "UK_" + column.getTable().getName() + "_NaturalId");
+					column.addUniqueKey( keyName, inSecondPass );
 				}
 			}
 		}

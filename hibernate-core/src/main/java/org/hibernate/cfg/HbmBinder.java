@@ -33,8 +33,6 @@ import java.util.StringTokenizer;
 import org.dom4j.Attribute;
 import org.dom4j.Document;
 import org.dom4j.Element;
-import org.jboss.logging.Logger;
-
 import org.hibernate.CacheMode;
 import org.hibernate.EntityMode;
 import org.hibernate.FetchMode;
@@ -99,6 +97,7 @@ import org.hibernate.type.BasicType;
 import org.hibernate.type.DiscriminatorType;
 import org.hibernate.type.ForeignKeyDirection;
 import org.hibernate.type.Type;
+import org.jboss.logging.Logger;
 
 /**
  * Walks an XML mapping document and produces the Hibernate configuration-time metamodel (the
@@ -2246,7 +2245,6 @@ public final class HbmBinder {
 			}
 			else if ( "natural-id".equals( name ) ) {
 				UniqueKey uk = new UniqueKey();
-				uk.setName(StringHelper.randomFixedLengthHex("UK_"));
 				uk.setTable(table);
 				//by default, natural-ids are "immutable" (constant)
 				boolean mutableId = "true".equals( subnode.attributeValue("mutable") );

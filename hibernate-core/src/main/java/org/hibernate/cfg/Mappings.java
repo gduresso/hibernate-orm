@@ -52,6 +52,7 @@ import org.hibernate.mapping.MetadataSource;
 import org.hibernate.mapping.PersistentClass;
 import org.hibernate.mapping.Table;
 import org.hibernate.mapping.TypeDef;
+import org.hibernate.tool.hbm2ddl.ConstraintImplicitNamingStrategy;
 import org.hibernate.type.TypeResolver;
 
 /**
@@ -89,6 +90,21 @@ public interface Mappings {
 	 * @param namingStrategy The naming strategy to use.
 	 */
 	public void setNamingStrategy(NamingStrategy namingStrategy);
+
+	/**
+	 * Get the current implicit constraint naming strategy.
+	 * 
+	 * @return The current implicit constraint naming strategy.
+	 */
+	public ConstraintImplicitNamingStrategy getConstraintImplicitNamingStrategy();
+
+	/**
+	 * Set the current implicit constraint naming strategy.
+	 * 
+	 * @param constraintImplicitNamingStrategy
+	 *            The implicit constraint naming strategy to use.
+	 */
+	public void setConstraintImplicitNamingStrategy(ConstraintImplicitNamingStrategy constraintImplicitNamingStrategy);
 
 	/**
 	 * Returns the currently bound default schema name.
