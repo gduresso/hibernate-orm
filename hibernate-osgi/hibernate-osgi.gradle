@@ -9,7 +9,7 @@ dependencies {
     testCompile( "org.ops4j.pax.exam:pax-exam:3.0.3" )
     testRuntime( "org.ops4j.pax.exam:pax-exam-junit4:3.0.3" )
     testRuntime( "org.ops4j.pax.exam:pax-exam-container-native:3.0.3" )
-    testRuntime( "org.apache.felix:org.apache.felix.framework:4.2.1" )
+    testRuntime( "org.apache.felix:org.apache.felix.framework:4.0.3" )
     testRuntime( "org.ops4j.pax.url:pax-url-mvn:1.3.6" )
     testRuntime( "org.ops4j.pax.url:pax-url-wrap:1.3.6" )
     testRuntime( "org.ops4j.pax.exam:pax-exam-link-mvn:3.0.3" )
@@ -29,8 +29,6 @@ jar {
         instruction 'Bundle-Description', 'Hibernate ORM OSGi'
 
         instruction 'Import-Package',
-            // TODO: Shouldn't have to explicitly list this, but the plugin
-            // generates it with a [1.0,2) version.
             'javax.persistence;version="2.1.0"',
             'javax.persistence.spi;version="2.1.0"'
     }

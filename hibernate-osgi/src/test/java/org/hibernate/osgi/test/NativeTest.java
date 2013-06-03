@@ -20,6 +20,13 @@
  */
 package org.hibernate.osgi.test;
 
+import static org.junit.Assert.assertEquals;
+
+import java.util.List;
+
+import org.hibernate.Session;
+import org.hibernate.osgi.test.entity.DataPoint;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.ops4j.pax.exam.junit.PaxExam;
 import org.ops4j.pax.exam.spi.reactors.ExamReactorStrategy;
@@ -30,6 +37,24 @@ import org.ops4j.pax.exam.spi.reactors.PerMethod;
  */
 @RunWith(PaxExam.class)
 @ExamReactorStrategy(PerMethod.class) // restarts the OSGi framework for every test -- cleaner
-public class ManagedJPATest extends AbstractOSGiTest {
+public class NativeTest extends AbstractOSGiTest {
  
+    @Test
+    public void testSession() {
+        Session s = getSession();
+        
+        DataPoint dp = new DataPoint();
+        dp.setName( "Brett" );
+        s.getTransaction().begin();
+        s.persist( dp );
+        s.getTransaction().commit();
+        s.clear();
+        
+        s.getTransaction().begin();
+        List<DataPoint> results = s.createQuery( "from DataPoint" ).list();
+        assertEquals(results.size(), 1);
+        assertEquals("Brett", results.get(0).getName());
+        s.getTransaction().commit();
+        s.close();
+    }
 }
