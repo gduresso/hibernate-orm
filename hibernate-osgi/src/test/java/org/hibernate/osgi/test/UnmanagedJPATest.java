@@ -25,6 +25,7 @@ import static org.junit.Assert.assertEquals;
 import java.util.List;
 
 import javax.persistence.EntityManager;
+import javax.persistence.spi.PersistenceProvider;
 
 import org.hibernate.osgi.test.entity.DataPoint;
 import org.junit.Test;
@@ -32,6 +33,7 @@ import org.junit.runner.RunWith;
 import org.ops4j.pax.exam.junit.PaxExam;
 import org.ops4j.pax.exam.spi.reactors.ExamReactorStrategy;
 import org.ops4j.pax.exam.spi.reactors.PerMethod;
+import org.osgi.framework.ServiceReference;
 
 /**
  * @author Brett Meyer
@@ -42,20 +44,6 @@ public class UnmanagedJPATest extends AbstractOSGiTest {
  
     @Test
     public void testEntityManager() {
-        EntityManager em = getEntityManager();
-        
-        DataPoint dp = new DataPoint();
-        dp.setName( "Brett" );
-        em.getTransaction().begin();
-        em.persist( dp );
-        em.getTransaction().commit();
-        em.clear();
-        
-        em.getTransaction().begin();
-        List<DataPoint> results = em.createQuery( "from DataPoint" ).getResultList();
-        assertEquals(results.size(), 1);
-        assertEquals("Brett", results.get(0).getName());
-        em.getTransaction().commit();
-        em.close();
+    	
     }
 }

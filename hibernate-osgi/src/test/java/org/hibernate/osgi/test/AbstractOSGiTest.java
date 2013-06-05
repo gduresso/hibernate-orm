@@ -20,31 +20,26 @@
  */
 package org.hibernate.osgi.test;
 
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 import static org.ops4j.pax.exam.CoreOptions.junitBundles;
 import static org.ops4j.pax.exam.CoreOptions.mavenBundle;
 import static org.ops4j.pax.exam.CoreOptions.options;
+import static org.ops4j.pax.exam.CoreOptions.streamBundle;
 import static org.ops4j.pax.exam.CoreOptions.systemProperty;
 import static org.ops4j.pax.exam.CoreOptions.systemTimeout;
 import static org.ops4j.pax.exam.CoreOptions.wrappedBundle;
 
-import java.io.InputStream;
+import java.io.File;
+import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.Enumeration;
 
 import javax.inject.Inject;
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.spi.PersistenceProvider;
 
-import org.hibernate.Session;
-import org.hibernate.SessionFactory;
-import org.hibernate.internal.util.ClassLoaderHelper;
 import org.hibernate.osgi.test.entity.DataPoint;
 import org.ops4j.pax.exam.Configuration;
 import org.ops4j.pax.exam.Option;
 import org.osgi.framework.BundleContext;
-import org.osgi.framework.ServiceReference;
+import org.osgi.framework.Constants;
 
 /**
  * @author Brett Meyer
@@ -56,12 +51,22 @@ public abstract class AbstractOSGiTest {
 	
 	@Configuration
 	public Option[] config() {
-
+		
+		URL cfgUrl = null;
+		URL persistenceUrl = null;
+		try {
+			cfgUrl = new File("src/test/resources/hibernate.cfg.xml").toURI().toURL();
+			persistenceUrl = new File("src/test/resources/META-INF/persistence.xml").toURI().toURL();
+		}
+		catch ( MalformedURLException e ) {
+			fail( "Could not locate hibernate.cfg.xml and/or persistence.xml for the client bundle. " );
+		}
+		
 		return options(
 
 		        // Log
-		        mavenBundle("org.ops4j.pax.logging", "pax-logging-api"),
-		        mavenBundle("org.ops4j.pax.logging", "pax-logging-service"),
+//		        mavenBundle("org.ops4j.pax.logging", "pax-logging-api"),
+//		       mavenBundle("org.ops4j.pax.logging", "pax-logging-service"),
 		        systemProperty("org.ops4j.pax.logging.DefaultServiceLog.level").value("DEBUG"),
 		        
 				// JTA
@@ -92,116 +97,25 @@ public abstract class AbstractOSGiTest {
 				mavenBundle( "com.fasterxml", "classmate", "0.5.4" ),
 				mavenBundle( "org.jboss.logging", "jboss-logging", "3.1.0.GA" ),
 
+				// TODO: Should these be using mavenBundle?  Find a way to use the local projects?
 				mavenBundle( "org.hibernate", "hibernate-core", "4.3.0-SNAPSHOT" ),
 				mavenBundle( "org.hibernate", "hibernate-entitymanager", "4.3.0-SNAPSHOT" ),
 				mavenBundle( "org.hibernate", "hibernate-osgi", "4.3.0-SNAPSHOT" ),
+				
+				streamBundle(org.ops4j.pax.tinybundles.core.TinyBundles.bundle()
+						.add( DataPoint.class )
+//						.add( "hibernate.cfg.xml", cfgUrl )
+						.add( "META-INF/persistence.xml", persistenceUrl )
+						.set( Constants.BUNDLE_SYMBOLICNAME, "Hibernate OSGi Test Bundle" )
+						.set( Constants.EXPORT_PACKAGE, "org.hibernate.osgi.test,org.hibernate.osgi.test.entity" )
+						.set( Constants.IMPORT_PACKAGE, "javax.persistence;version=\"2.1.0\",javax.persistence.spi;version=\"2.1.0\",org.hibernate,org.junit,org.osgi.framework" )
+						.add( OsgiTestBundleActivator.class )
+						.set( Constants.BUNDLE_ACTIVATOR, OsgiTestBundleActivator.class.getName() )
+						.build()),
 
 				junitBundles(),
 				
 				systemTimeout( 10 * 60 * 1000 ) );
-	}
-	
-	// unmanaged Native
-	protected Session getSession() {
-		ClassLoader originalOsgiClassLoader = ClassLoaderHelper.overridenClassLoader;
-		ClassLoaderHelper.overridenClassLoader = new OsgiTestClassLoader( originalOsgiClassLoader, DataPoint.class.getClassLoader() );
-		
-		ServiceReference sr = context.getServiceReference( SessionFactory.class.getName() );
-		SessionFactory sf = (SessionFactory) context.getService( sr );
-		assertNotNull( sf );
-		Session s = sf.openSession();
-		assertNotNull( s );
-		return s;
-	}
-
-	// unmanaged JPA
-	protected EntityManager getEntityManager() {
-		ClassLoader originalOsgiClassLoader = ClassLoaderHelper.overridenClassLoader;
-		ClassLoaderHelper.overridenClassLoader = new OsgiTestClassLoader( originalOsgiClassLoader, DataPoint.class.getClassLoader() );
-		
-		ServiceReference serviceReference = context.getServiceReference( PersistenceProvider.class.getName() );
-		PersistenceProvider persistenceProvider = (PersistenceProvider) context.getService( serviceReference );
-		EntityManagerFactory emf = persistenceProvider.createEntityManagerFactory( "hibernate-osgi-test", null );
-		assertNotNull( emf );
-		EntityManager em = emf.createEntityManager();
-		assertNotNull( em );
-		return em;
-	}
-	
-	/**
-	 * The Pax Exam framework appears to hijack the "requesting bundle" when calling #getService with some sort of
-	 * Pax-specific proxy.  It's ClassLoader does not appear to work as expected.  The test entities in hibernate-osgi
-	 * were not found, even if they were temporarily in src/main/java.  For now, use this hack.  It overrides the
-	 * static ClassLoader variable set when the hibernate-osgi bundle activates.
-	 * 
-	 * TODO: This is terrible and will only work with our 4.2/4.3 ClassLoaderHelper.overridenClassLoader band-aid.
-	 * Discuss with the Pax dev team?
-	 */
-	public class OsgiTestClassLoader extends ClassLoader {
-		private final ClassLoader originalOsgiClassLoader;
-		private final ClassLoader thisClassLoader;
-		
-		public OsgiTestClassLoader( ClassLoader originalOsgiClassLoader, ClassLoader thisClassLoader ) {
-			this.originalOsgiClassLoader = originalOsgiClassLoader;
-			this.thisClassLoader = thisClassLoader;
-		}
-		
-		@Override
-		@SuppressWarnings("rawtypes")
-		public Class<?> loadClass(String name) throws ClassNotFoundException {
-			try {
-				final Class clazz = thisClassLoader.loadClass( name );
-				if ( clazz != null ) {
-					return clazz;
-				}
-			}
-			catch ( Exception ignore ) {
-			}
-			
-			return originalOsgiClassLoader.loadClass( name );
-		}
-		
-		@Override
-		public URL getResource(String name) {
-			try {
-				final URL resource = thisClassLoader.getResource( name );
-				if ( resource != null ) {
-					return resource;
-				}
-			}
-			catch ( Exception ignore ) {
-			}
-			
-			return originalOsgiClassLoader.getResource( name );
-		}
-		
-		@Override
-		public InputStream getResourceAsStream(String name) {
-			try {
-				final InputStream resource = thisClassLoader.getResourceAsStream( name );
-				if ( resource != null ) {
-					return resource;
-				}
-			}
-			catch ( Exception ignore ) {
-			}
-			
-			return originalOsgiClassLoader.getResourceAsStream( name );
-		}
-		
-		@Override
-		public Enumeration getResources(String name) throws java.io.IOException {
-			try {
-				final Enumeration<URL> resources = thisClassLoader.getResources( name );
-				if ( resources != null ) {
-					return resources;
-				}
-			}
-			catch ( Exception ignore ) {
-			}
-			
-			return originalOsgiClassLoader.getResources( name );
-		}
 	}
 
 }

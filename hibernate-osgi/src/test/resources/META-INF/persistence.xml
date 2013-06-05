@@ -3,6 +3,7 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     version="1.0">
     <persistence-unit name="hibernate-osgi-test">
+    	<class>org.hibernate.osgi.test.entity.DataPoint</class>
         <properties>
             <property name="hibernate.connection.driver_class" value="org.h2.Driver"/>
             <property name="hibernate.dialect" value="org.hibernate.dialect.H2Dialect"/>
@@ -14,7 +15,7 @@
             <property name="hibernate.cache.use_second_level_cache" value="false"/>
             
             <!-- Force the testing of scanning. -->
-            <property name="hibernate.archive.autodetection" value="class"/>
+            <!-- <property name="hibernate.archive.autodetection" value="class"/> -->
         </properties>
     </persistence-unit>
 </persistence>
