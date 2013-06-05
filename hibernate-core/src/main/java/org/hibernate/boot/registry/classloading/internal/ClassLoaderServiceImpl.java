@@ -77,15 +77,6 @@ public class ClassLoaderServiceImpl implements ClassLoaderService {
 	public ClassLoaderServiceImpl(Collection<ClassLoader> providedClassLoaders) {
 		final LinkedHashSet<ClassLoader> orderedClassLoaderSet = new LinkedHashSet<ClassLoader>();
 
-		// first add all provided class loaders, if any
-		if ( providedClassLoaders != null ) {
-			for ( ClassLoader classLoader : providedClassLoaders ) {
-				if ( classLoader != null ) {
-					orderedClassLoaderSet.add( classLoader );
-				}
-			}
-		}
-
 		// normalize adding known class-loaders...
 		// first, the Hibernate class loader
 		orderedClassLoaderSet.add( ClassLoaderServiceImpl.class.getClassLoader() );
@@ -94,10 +85,19 @@ public class ClassLoaderServiceImpl implements ClassLoaderService {
 		if ( tccl != null ) {
 			orderedClassLoaderSet.add( tccl );
 		}
-		// finally the system classloader
+		// then the system classloader
 		final ClassLoader sysClassLoader = locateSystemClassLoader();
 		if ( sysClassLoader != null ) {
 			orderedClassLoaderSet.add( sysClassLoader );
+		}
+
+		// finally add all provided class loaders, if any
+		if ( providedClassLoaders != null ) {
+			for ( ClassLoader classLoader : providedClassLoaders ) {
+				if ( classLoader != null ) {
+					orderedClassLoaderSet.add( classLoader );
+				}
+			}
 		}
 
 		// now build the aggregated class loader...

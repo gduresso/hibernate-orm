@@ -55,6 +55,8 @@ public class HibernatePersistenceProvider implements PersistenceProvider {
 
 	private final PersistenceUtilHelper.MetadataCache cache = new PersistenceUtilHelper.MetadataCache();
 	
+	protected ClassLoader providedClassLoader = null;
+	
 	/**
 	 * {@inheritDoc}
 	 * <p/>
@@ -118,7 +120,7 @@ public class HibernatePersistenceProvider implements PersistenceProvider {
 				continue;
 			}
 
-			return Bootstrap.getEntityManagerFactoryBuilder( persistenceUnit, integration );
+			return Bootstrap.getEntityManagerFactoryBuilder( persistenceUnit, integration, providedClassLoader );
 		}
 
 		log.debug( "Found no matching persistence units" );
@@ -139,14 +141,14 @@ public class HibernatePersistenceProvider implements PersistenceProvider {
 	public EntityManagerFactory createContainerEntityManagerFactory(PersistenceUnitInfo info, Map properties) {
 		log.tracef( "Starting createContainerEntityManagerFactory : %s", info.getPersistenceUnitName() );
 
-		return Bootstrap.getEntityManagerFactoryBuilder( info, properties ).build();
+		return Bootstrap.getEntityManagerFactoryBuilder( info, properties, providedClassLoader ).build();
 	}
 
 	@Override
 	public void generateSchema(PersistenceUnitInfo info, Map map) {
 		log.tracef( "Starting generateSchema : PUI.name=%s", info.getPersistenceUnitName() );
 
-		final EntityManagerFactoryBuilder builder = Bootstrap.getEntityManagerFactoryBuilder( info, map );
+		final EntityManagerFactoryBuilder builder = Bootstrap.getEntityManagerFactoryBuilder( info, map, providedClassLoader );
 		builder.generateSchema();
 	}
 

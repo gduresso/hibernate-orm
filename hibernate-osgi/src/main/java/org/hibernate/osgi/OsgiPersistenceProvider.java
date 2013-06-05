@@ -69,6 +69,7 @@ public class OsgiPersistenceProvider extends HibernatePersistenceProvider {
 			Bundle requestingBundle,
 			BundleContext context) {
 		this.osgiClassLoader = osgiClassLoader;
+		this.providedClassLoader = osgiClassLoader;
 		this.osgiJtaPlatform = osgiJtaPlatform;
 		this.requestingBundle = requestingBundle;
 		this.context = context;
@@ -80,6 +81,8 @@ public class OsgiPersistenceProvider extends HibernatePersistenceProvider {
 	@Override
 	@SuppressWarnings("unchecked")
 	public EntityManagerFactory createEntityManagerFactory(String persistenceUnitName, Map properties) {
+		osgiClassLoader.addBundle( requestingBundle );
+		
 		final Map settings = generateSettings( properties );
 
 		// TODO: This needs tested.
@@ -88,14 +91,14 @@ public class OsgiPersistenceProvider extends HibernatePersistenceProvider {
 		// ClassLoaderServiceImpl#fromConfigSettings
 		settings.put( AvailableSettings.ENVIRONMENT_CLASSLOADER, osgiClassLoader );
 
-		osgiClassLoader.addBundle( requestingBundle );
-
 		return super.createEntityManagerFactory( persistenceUnitName, settings );
 	}
 
 	@Override
 	@SuppressWarnings("unchecked")
 	public EntityManagerFactory createContainerEntityManagerFactory(PersistenceUnitInfo info, Map properties) {
+		osgiClassLoader.addClassLoader( info.getClassLoader() );
+		
 		final Map settings = generateSettings( properties );
 
 		// OSGi ClassLoaders must implement BundleReference
@@ -103,8 +106,6 @@ public class OsgiPersistenceProvider extends HibernatePersistenceProvider {
 				org.hibernate.jpa.AvailableSettings.SCANNER,
 				new OsgiScanner( ( (BundleReference) info.getClassLoader() ).getBundle() )
 		);
-
-		osgiClassLoader.addClassLoader( info.getClassLoader() );
 
 		return super.createContainerEntityManagerFactory( info, settings );
 	}
