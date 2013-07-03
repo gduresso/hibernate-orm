@@ -23,23 +23,24 @@
  */
 package org.hibernate.metamodel.internal.source.annotations;
 
-import java.util.List;
+import java.util.ArrayList;
+import java.util.Arrays;
 
-import org.hibernate.metamodel.spi.source.UniqueConstraintSource;
+import org.hibernate.metamodel.spi.source.IndexConstraintSource;
 
 /**
- * @author Hardy Ferentschik
+ * @author Brett Meyer
  */
-class UniqueConstraintSourceImpl extends AbstractConstraintSource implements UniqueConstraintSource {
-	
-	public UniqueConstraintSourceImpl(String name, String tableName, List<String> columnNames) {
-		super( name, tableName, columnNames );
+class IndexConstraintSourceImpl extends AbstractConstraintSource implements IndexConstraintSource {
+
+	public IndexConstraintSourceImpl(String name, String tableName, String columnList) {
+		super( name, tableName, new ArrayList<String>( Arrays.asList( columnList ) ) );
 	}
 
 	@Override
 	public String toString() {
 		final StringBuilder sb = new StringBuilder();
-		sb.append( "UniqueConstraintSourceImpl" );
+		sb.append( "IndexConstraintSourceImpl" );
 		sb.append( "{name='" ).append( name ).append( '\'' );
 		sb.append( ", tableName='" ).append( tableName ).append( '\'' );
 		sb.append( ", columnNames=" ).append( columnNames );

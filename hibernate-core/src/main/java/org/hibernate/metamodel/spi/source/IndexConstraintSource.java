@@ -21,31 +21,12 @@
  * 51 Franklin Street, Fifth Floor
  * Boston, MA  02110-1301  USA
  */
-package org.hibernate.metamodel.internal.source.annotations;
-
-import java.util.List;
-
-import org.hibernate.metamodel.spi.source.UniqueConstraintSource;
+package org.hibernate.metamodel.spi.source;
 
 /**
- * @author Hardy Ferentschik
+ * Defining a index constraint source
+ *
+ * @author Brett Meyer
  */
-class UniqueConstraintSourceImpl extends AbstractConstraintSource implements UniqueConstraintSource {
-	
-	public UniqueConstraintSourceImpl(String name, String tableName, List<String> columnNames) {
-		super( name, tableName, columnNames );
-	}
-
-	@Override
-	public String toString() {
-		final StringBuilder sb = new StringBuilder();
-		sb.append( "UniqueConstraintSourceImpl" );
-		sb.append( "{name='" ).append( name ).append( '\'' );
-		sb.append( ", tableName='" ).append( tableName ).append( '\'' );
-		sb.append( ", columnNames=" ).append( columnNames );
-		sb.append( '}' );
-		return sb.toString();
-	}
+public interface IndexConstraintSource extends ConstraintSource {
 }
-
-
