@@ -25,11 +25,13 @@ package org.hibernate.metamodel.spi.relational;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.hibernate.dialect.Dialect;
+import org.hibernate.internal.util.StringHelper;
 
 /**
  * Support for writing {@link Constraint} implementations
@@ -38,11 +40,13 @@ import org.hibernate.dialect.Dialect;
  *
  * @author Steve Ebersole
  * @author Gail Badner
+ * @author Brett Meyer
  */
 public abstract class AbstractConstraint implements Constraint {
 	private TableSpecification table;
 	private String name;
 	private final Map<Identifier, Column> columnMap = new LinkedHashMap<Identifier, Column>();
+	private final Map<Column, String> columnOrderMap = new HashMap<Column, String>();
 
 	protected AbstractConstraint(TableSpecification table, String name) {
 		this.table = table;
@@ -134,6 +138,21 @@ public abstract class AbstractConstraint implements Constraint {
 //			);
 //		}
 		columnMap.put( column.getColumnName(), column );
+	}
+
+	public void addColumn(Column column, String order) {
+		addColumn( column );
+		if ( StringHelper.isNotEmpty( order ) ) {
+			columnOrderMap.put( column, order );
+		}
+	}
+	
+	public boolean hasOrdering(Column column) {
+		return columnOrderMap.containsKey( column );
+	}
+	
+	public String getOrdering(Column column) {
+		return columnOrderMap.get( column );
 	}
 
 	protected boolean isCreationVetoed(Dialect dialect) {

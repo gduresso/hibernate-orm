@@ -23,6 +23,7 @@
  */
 package org.hibernate.metamodel.spi.source;
 
+
 /**
  * Defining a unique constraint source
  *

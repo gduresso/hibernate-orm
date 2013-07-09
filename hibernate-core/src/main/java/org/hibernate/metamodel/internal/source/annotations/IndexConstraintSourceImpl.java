@@ -23,8 +23,7 @@
  */
 package org.hibernate.metamodel.internal.source.annotations;
 
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.List;
 
 import org.hibernate.metamodel.spi.source.IndexConstraintSource;
 
@@ -33,8 +32,8 @@ import org.hibernate.metamodel.spi.source.IndexConstraintSource;
  */
 class IndexConstraintSourceImpl extends AbstractConstraintSource implements IndexConstraintSource {
 
-	public IndexConstraintSourceImpl(String name, String tableName, String columnList) {
-		super( name, tableName, new ArrayList<String>( Arrays.asList( columnList ) ) );
+	public IndexConstraintSourceImpl(String name, String tableName, List<String> columnNames, List<String> orderings) {
+		super( name, tableName, columnNames, orderings );
 	}
 
 	@Override
@@ -44,6 +43,7 @@ class IndexConstraintSourceImpl extends AbstractConstraintSource implements Inde
 		sb.append( "{name='" ).append( name ).append( '\'' );
 		sb.append( ", tableName='" ).append( tableName ).append( '\'' );
 		sb.append( ", columnNames=" ).append( columnNames );
+		sb.append( ", orderings=" ).append( orderings );
 		sb.append( '}' );
 		return sb.toString();
 	}

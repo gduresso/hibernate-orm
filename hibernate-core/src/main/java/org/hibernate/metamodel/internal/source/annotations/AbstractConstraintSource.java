@@ -25,20 +25,22 @@ package org.hibernate.metamodel.internal.source.annotations;
 
 import java.util.List;
 
-import org.hibernate.metamodel.spi.source.UniqueConstraintSource;
+import org.hibernate.metamodel.spi.source.ConstraintSource;
 
 /**
  * @author Hardy Ferentschik
  */
-class AbstractConstraintSource implements UniqueConstraintSource {
+class AbstractConstraintSource implements ConstraintSource {
 	protected final String name;
 	protected final String tableName;
 	protected final List<String> columnNames;
+	protected final List<String> orderings;
 
-	AbstractConstraintSource(String name, String tableName, List<String> columnNames) {
+	AbstractConstraintSource(String name, String tableName, List<String> columnNames, List<String> orderings) {
 		this.name = name;
 		this.tableName = tableName;
 		this.columnNames = columnNames;
+		this.orderings = orderings;
 	}
 
 	@Override
@@ -55,6 +57,10 @@ class AbstractConstraintSource implements UniqueConstraintSource {
 	public List<String> columnNames() {
 		return columnNames;
 	}
+	
+	public List<String> orderings() {
+		return orderings;
+	}
 
 	@Override
 	public boolean equals(Object o) {
@@ -68,6 +74,9 @@ class AbstractConstraintSource implements UniqueConstraintSource {
 		AbstractConstraintSource that = (AbstractConstraintSource) o;
 
 		if ( columnNames != null ? !columnNames.equals( that.columnNames ) : that.columnNames != null ) {
+			return false;
+		}
+		if ( orderings != null ? !orderings.equals( that.orderings ) : that.orderings != null ) {
 			return false;
 		}
 		if ( name != null ? !name.equals( that.name ) : that.name != null ) {
@@ -85,6 +94,7 @@ class AbstractConstraintSource implements UniqueConstraintSource {
 		int result = name != null ? name.hashCode() : 0;
 		result = 31 * result + ( tableName != null ? tableName.hashCode() : 0 );
 		result = 31 * result + ( columnNames != null ? columnNames.hashCode() : 0 );
+		result = 31 * result + ( orderings != null ? orderings.hashCode() : 0 );
 		return result;
 	}
 }

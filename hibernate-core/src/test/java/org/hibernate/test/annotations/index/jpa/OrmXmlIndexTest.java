@@ -6,7 +6,7 @@ import org.hibernate.testing.FailureExpectedWithNewMetamodel;
 /**
  * @author Strong Liu <stliu@hibernate.org>
  */
-@FailureExpectedWithNewMetamodel
+//@FailureExpectedWithNewMetamodel
 public class OrmXmlIndexTest extends AbstractJPAIndexTest {
 	@Override
 	protected String[] getXmlFiles() {

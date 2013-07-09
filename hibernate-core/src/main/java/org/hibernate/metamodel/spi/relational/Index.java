@@ -49,6 +49,9 @@ public class Index extends AbstractConstraint {
 				buf.append( ", " );
 			}
 			buf.append( column.getColumnName().getText( dialect ) );
+			if ( hasOrdering( column ) ) {
+				buf.append( " " ).append( getOrdering( column ) );
+			}
 		}
 		return buf.append( ')' ).toString();
 	}

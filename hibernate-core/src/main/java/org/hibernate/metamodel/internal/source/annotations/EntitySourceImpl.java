@@ -29,6 +29,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.StringTokenizer;
 
 import org.hibernate.AnnotationException;
 import org.hibernate.MappingException;
@@ -477,11 +478,40 @@ public class EntitySourceImpl implements EntitySource {
 		for ( final AnnotationInstance index : indexConstraints ) {
 			final String name = index.value( "name" ) == null ? null : index.value( "name" ).asString();
 			final String columnList = index.value( "columnList" ).asString();
-			final IndexConstraintSourceImpl indexConstraintSource =
-					new IndexConstraintSourceImpl(
-							name, tableName, columnList
-					);
-			constraintSources.add( indexConstraintSource );
+			final boolean isUnique = index.value( "unique" ) == null ? false : index.value( "unique" ).asBoolean();
+			
+			// Taken from JPAIndexHolder.
+			// TODO: Move elsewhere?
+			final StringTokenizer tokenizer = new StringTokenizer( columnList, "," );
+			final List<String> tmp = new ArrayList<String>();
+			while ( tokenizer.hasMoreElements() ) {
+				tmp.add( tokenizer.nextToken().trim() );
+			}
+			final List<String> columnNames = new ArrayList<String>();
+			final List<String> orderings = new ArrayList<String>();
+			for ( String indexColumn : tmp ) {
+				indexColumn = indexColumn.toLowerCase();
+				if ( indexColumn.endsWith( " desc" ) ) {
+					columnNames.add( indexColumn.substring( 0, indexColumn.length() - 5 ) );
+					orderings.add( "desc" );
+				}
+				else if ( indexColumn.endsWith( " asc" ) ) {
+					columnNames.add( indexColumn.substring( 0, indexColumn.length() - 4 ) );
+					orderings.add( "asc" );
+				}
+				else {
+					columnNames.add( indexColumn );
+					orderings.add( null );
+				}
+			}
+			
+			ConstraintSource constraintSource = null;
+			if ( isUnique ) {
+				constraintSource = new UniqueConstraintSourceImpl( name, tableName, columnNames, orderings );
+			} else {
+				constraintSource = new IndexConstraintSourceImpl( name, tableName, columnNames, orderings );
+			}
+			constraintSources.add( constraintSource );
 		}
 	}
 

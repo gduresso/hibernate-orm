@@ -2888,11 +2888,13 @@ public class Binder {
 			final EntitySource entitySource) {
 		for ( final ConstraintSource constraintSource : entitySource.getConstraints() ) {
 			if ( UniqueConstraintSource.class.isInstance( constraintSource ) ) {
+				UniqueConstraintSource uniqueConstraintSource = (UniqueConstraintSource) constraintSource;
+				
 				UniqueKey uk = new UniqueKey();
 				
 				TableSpecification table = findConstraintTable( entityBinding, constraintSource.getTableName() );
 				
-				final List<String> columnNames = constraintSource.columnNames();
+				final List<String> columnNames = uniqueConstraintSource.columnNames();
 				final String constraintName = StringHelper.isEmpty( constraintSource.name() )
 						? HashedNameUtil.generateName( "UK_", table, columnNames.toArray( new String[columnNames.size()] ) )
 						: constraintSource.name();
@@ -2903,16 +2905,20 @@ public class Binder {
 				uk.setName( constraintName );
 				table.addUniqueKey( uk );
 			}
-			else if ( IndexConstraintSource.class.isInstance( constraintSource ) ) {				
+			else if ( IndexConstraintSource.class.isInstance( constraintSource ) ) {			
+				IndexConstraintSource indexConstraintSource = (IndexConstraintSource) constraintSource;
+				
 				TableSpecification table = findConstraintTable( entityBinding, constraintSource.getTableName() );
 				
-				final List<String> columnNames = constraintSource.columnNames();
+				final List<String> columnNames = indexConstraintSource.columnNames();
+				final List<String> orderings = indexConstraintSource.orderings();
 				final String constraintName = StringHelper.isEmpty( constraintSource.name() )
 						? HashedNameUtil.generateName( "IDX_", table, columnNames.toArray( new String[columnNames.size()] ) )
 						: constraintSource.name();
 				final Index index = table.getOrCreateIndex( constraintName );
-				for ( final String columnName : columnNames ) {
-					index.addColumn( table.locateOrCreateColumn( quotedIdentifier( columnName ) ) );
+				for ( int i = 0; i < columnNames.size(); i++ ) {
+					Column column = table.locateOrCreateColumn( quotedIdentifier( columnNames.get( i ) ) );
+					index.addColumn( column, orderings.get( 0 ) );
 				}
 			}
 		}
