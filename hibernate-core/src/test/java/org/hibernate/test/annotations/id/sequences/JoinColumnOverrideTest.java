@@ -1,23 +1,21 @@
 //$Id$
 package org.hibernate.test.annotations.id.sequences;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+
 import java.io.PrintWriter;
 import java.io.StringWriter;
-
-import org.jboss.logging.Logger;
-import org.junit.Test;
 
 import org.hibernate.cfg.Configuration;
 import org.hibernate.dialect.SQLServerDialect;
 import org.hibernate.test.annotations.id.sequences.entities.Bunny;
 import org.hibernate.test.annotations.id.sequences.entities.PointyTooth;
 import org.hibernate.test.annotations.id.sequences.entities.TwinkleToes;
-import org.hibernate.testing.ServiceRegistryBuilder;
 import org.hibernate.testing.TestForIssue;
 import org.hibernate.testing.junit4.BaseUnitTestCase;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import org.jboss.logging.Logger;
+import org.junit.Test;
 
 /**
  * Tests for JIRA issue ANN-748.

@@ -26,8 +26,6 @@ package org.hibernate.dialect;
 import java.sql.SQLException;
 import java.sql.Types;
 
-import org.jboss.logging.Logger;
-
 import org.hibernate.JDBCException;
 import org.hibernate.PessimisticLockException;
 import org.hibernate.cfg.AvailableSettings;
@@ -42,8 +40,8 @@ import org.hibernate.exception.spi.TemplatedViolatedConstraintNameExtracter;
 import org.hibernate.exception.spi.ViolatedConstraintNameExtracter;
 import org.hibernate.internal.CoreMessageLogger;
 import org.hibernate.internal.util.JdbcExceptionHelper;
-import org.hibernate.internal.util.ReflectHelper;
 import org.hibernate.type.StandardBasicTypes;
+import org.jboss.logging.Logger;
 
 /**
  * A dialect compatible with the H2 database.
@@ -67,7 +65,7 @@ public class H2Dialect extends Dialect {
 		String querySequenceString = "select sequence_name from information_schema.sequences";
 		try {
 			// HHH-2300
-			final Class h2ConstantsClass = ReflectHelper.classForName( "org.h2.engine.Constants" );
+			final Class h2ConstantsClass = classLoaderService.classForName( "org.h2.engine.Constants" );
 			final int majorVersion = (Integer) h2ConstantsClass.getDeclaredField( "VERSION_MAJOR" ).get( null );
 			final int minorVersion = (Integer) h2ConstantsClass.getDeclaredField( "VERSION_MINOR" ).get( null );
 			final int buildId = (Integer) h2ConstantsClass.getDeclaredField( "BUILD_ID" ).get( null );

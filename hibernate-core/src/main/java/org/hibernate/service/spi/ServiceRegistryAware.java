@@ -24,11 +24,11 @@
 package org.hibernate.service.spi;
 
 /**
- * Allows services to be injected with the {@link org.hibernate.service.ServiceRegistry} during configuration phase.
+ * Allows services and strategies to be injected with the {@link org.hibernate.service.ServiceRegistry} during configuration phase.
  *
  * @author Steve Ebersole
  */
-public interface ServiceRegistryAwareService {
+public interface ServiceRegistryAware {
 	/**
 	 * Callback to inject the registry.
 	 *

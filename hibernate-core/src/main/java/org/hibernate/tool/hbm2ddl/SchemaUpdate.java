@@ -82,6 +82,7 @@ public class SchemaUpdate {
 
 	public SchemaUpdate(Configuration configuration, Properties properties) throws HibernateException {
 		this.configuration = configuration;
+		
 		this.dialect = Dialect.getDialect( properties );
 
 		Properties props = new Properties();

@@ -29,6 +29,7 @@ import javax.persistence.EntityManagerFactory;
 import java.util.Arrays;
 import java.util.Map;
 
+import org.hibernate.boot.registry.internal.BootstrapServiceRegistryImpl;
 import org.hibernate.cfg.Environment;
 import org.hibernate.dialect.Dialect;
 import org.hibernate.jpa.test.SettingsGenerator;
@@ -159,7 +160,7 @@ public class InterceptorTest {
 		return SettingsGenerator.generateSettings(
 				Environment.HBM2DDL_AUTO, "create-drop",
 				Environment.USE_NEW_ID_GENERATOR_MAPPINGS, "true",
-				Environment.DIALECT, Dialect.getDialect().getClass().getName(),
+				Environment.DIALECT, Dialect.getDialect( new BootstrapServiceRegistryImpl() ).getClass().getName(),
 				AvailableSettings.LOADED_CLASSES, Arrays.asList( getAnnotatedClasses() )
 		);
     }

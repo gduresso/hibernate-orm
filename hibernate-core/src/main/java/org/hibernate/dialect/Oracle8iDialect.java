@@ -496,7 +496,8 @@ public class Oracle8iDialect extends Dialect {
 	@Override
 	public int registerResultSetOutParameter(CallableStatement statement, int col) throws SQLException {
 		//	register the type of the out param - an Oracle specific type
-		statement.registerOutParameter( col, OracleTypesHelper.INSTANCE.getOracleCursorTypeSqlType() );
+		statement.registerOutParameter( col, OracleTypesHelper.getInstance( serviceRegistry )
+				.getOracleCursorTypeSqlType() );
 		col++;
 		return col;
 	}

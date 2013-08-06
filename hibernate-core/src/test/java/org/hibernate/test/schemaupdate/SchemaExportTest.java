@@ -47,8 +47,8 @@ public abstract class SchemaExportTest extends BaseUnitTestCase {
     protected abstract SchemaExport createSchemaExport(Configuration cfg);
 
     private boolean doesDialectSupportDropTableIfExist() {
-        return Dialect.getDialect().supportsIfExistsAfterTableName() || Dialect.getDialect()
-                .supportsIfExistsBeforeTableName();
+        return Dialect.getDialect().supportsIfExistsAfterTableName()
+        		|| Dialect.getDialect().supportsIfExistsBeforeTableName();
     }
 	protected ServiceRegistry serviceRegistry;
 

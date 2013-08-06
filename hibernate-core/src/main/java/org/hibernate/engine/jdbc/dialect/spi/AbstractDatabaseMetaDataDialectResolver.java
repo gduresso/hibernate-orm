@@ -26,12 +26,12 @@ package org.hibernate.engine.jdbc.dialect.spi;
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 
-import org.jboss.logging.Logger;
-
 import org.hibernate.JDBCException;
 import org.hibernate.dialect.Dialect;
 import org.hibernate.exception.JDBCConnectionException;
 import org.hibernate.internal.CoreMessageLogger;
+import org.hibernate.service.ServiceRegistry;
+import org.jboss.logging.Logger;
 
 /**
  * A templated resolver impl which delegates to the {@link #resolveDialectInternal} method
@@ -40,6 +40,8 @@ import org.hibernate.internal.CoreMessageLogger;
  * @author Steve Ebersole
  */
 public abstract class AbstractDatabaseMetaDataDialectResolver implements DialectResolver {
+	private ServiceRegistry serviceRegistry;
+	
 	private static final CoreMessageLogger LOG = Logger.getMessageLogger(
 			CoreMessageLogger.class,
 			AbstractDatabaseMetaDataDialectResolver.class.getName()

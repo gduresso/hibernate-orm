@@ -41,7 +41,7 @@ import org.hibernate.engine.jdbc.spi.SqlStatementLogger;
 import org.hibernate.internal.CoreMessageLogger;
 import org.hibernate.internal.util.config.ConfigurationHelper;
 import org.hibernate.service.spi.Configurable;
-import org.hibernate.service.spi.ServiceRegistryAwareService;
+import org.hibernate.service.spi.ServiceRegistryAware;
 import org.hibernate.service.spi.ServiceRegistryImplementor;
 
 /**
@@ -49,7 +49,7 @@ import org.hibernate.service.spi.ServiceRegistryImplementor;
  *
  * @author Steve Ebersole
  */
-public class JdbcServicesImpl implements JdbcServices, ServiceRegistryAwareService, Configurable {
+public class JdbcServicesImpl implements JdbcServices, ServiceRegistryAware, Configurable {
 	private static final CoreMessageLogger LOG = Logger.getMessageLogger(
 			CoreMessageLogger.class,
 			JdbcServicesImpl.class.getName()

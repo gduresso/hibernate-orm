@@ -42,7 +42,7 @@ import org.hibernate.service.spi.Manageable;
 import org.hibernate.service.spi.ServiceBinding;
 import org.hibernate.service.spi.ServiceException;
 import org.hibernate.service.spi.ServiceInitiator;
-import org.hibernate.service.spi.ServiceRegistryAwareService;
+import org.hibernate.service.spi.ServiceRegistryAware;
 import org.hibernate.service.spi.ServiceRegistryImplementor;
 import org.hibernate.service.spi.Startable;
 import org.hibernate.service.spi.Stoppable;
@@ -193,8 +193,8 @@ public abstract class AbstractServiceRegistryImpl
 
 		applyInjections( service );
 
-		if ( ServiceRegistryAwareService.class.isInstance( service ) ) {
-			( (ServiceRegistryAwareService) service ).injectServices( this );
+		if ( ServiceRegistryAware.class.isInstance( service ) ) {
+			( (ServiceRegistryAware) service ).injectServices( this );
 		}
 	}
 

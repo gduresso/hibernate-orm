@@ -37,6 +37,7 @@ public class TestingDatabaseInfo {
 	public static volatile String USER = "sa";
 	public static volatile String PASS = "";
 
+	// TODO: kind of hacky...
 	public static final Dialect DIALECT = new H2Dialect();
 
 	public static Configuration buildBaseConfiguration() {

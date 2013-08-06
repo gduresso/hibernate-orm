@@ -37,7 +37,7 @@ import org.hibernate.internal.util.StringHelper;
 import org.hibernate.internal.util.config.ConfigurationHelper;
 import org.hibernate.service.UnknownUnwrapTypeException;
 import org.hibernate.service.spi.Configurable;
-import org.hibernate.service.spi.ServiceRegistryAwareService;
+import org.hibernate.service.spi.ServiceRegistryAware;
 import org.hibernate.service.spi.ServiceRegistryImplementor;
 import org.hibernate.service.spi.Stoppable;
 import org.jboss.logging.Logger;
@@ -52,7 +52,7 @@ import org.logicalcobwebs.proxool.configuration.PropertyConfigurator;
  *
  * @see ConnectionProvider
  */
-public class ProxoolConnectionProvider implements ConnectionProvider, Configurable, Stoppable, ServiceRegistryAwareService {
+public class ProxoolConnectionProvider implements ConnectionProvider, Configurable, Stoppable, ServiceRegistryAware {
 	private static final ProxoolMessageLogger LOG = Logger.getMessageLogger(
 			ProxoolMessageLogger.class,
 			ProxoolConnectionProvider.class.getName()

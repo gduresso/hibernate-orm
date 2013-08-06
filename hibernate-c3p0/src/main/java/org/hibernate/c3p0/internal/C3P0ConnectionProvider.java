@@ -43,7 +43,7 @@ import org.hibernate.boot.registry.classloading.spi.ClassLoaderService;
 import org.hibernate.boot.registry.classloading.spi.ClassLoadingException;
 import org.hibernate.engine.jdbc.connections.spi.ConnectionProvider;
 import org.hibernate.service.spi.Configurable;
-import org.hibernate.service.spi.ServiceRegistryAwareService;
+import org.hibernate.service.spi.ServiceRegistryAware;
 import org.hibernate.service.spi.ServiceRegistryImplementor;
 import org.hibernate.service.spi.Stoppable;
 
@@ -55,7 +55,7 @@ import org.hibernate.service.spi.Stoppable;
  * @see ConnectionProvider
  */
 public class C3P0ConnectionProvider
-		implements ConnectionProvider, Configurable, Stoppable, ServiceRegistryAwareService {
+		implements ConnectionProvider, Configurable, Stoppable, ServiceRegistryAware {
 
 	private static final C3P0MessageLogger LOG = Logger.getMessageLogger(
 			C3P0MessageLogger.class,

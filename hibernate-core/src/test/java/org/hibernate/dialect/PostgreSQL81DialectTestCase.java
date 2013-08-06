@@ -23,9 +23,10 @@
  */
 package org.hibernate.dialect;
 
-import java.sql.SQLException;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
-import org.junit.Test;
+import java.sql.SQLException;
 
 import org.hibernate.JDBCException;
 import org.hibernate.PessimisticLockException;
@@ -33,9 +34,7 @@ import org.hibernate.exception.LockAcquisitionException;
 import org.hibernate.exception.spi.SQLExceptionConversionDelegate;
 import org.hibernate.testing.TestForIssue;
 import org.hibernate.testing.junit4.BaseUnitTestCase;
-
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import org.junit.Test;
 
 
 /**

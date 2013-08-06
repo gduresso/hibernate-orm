@@ -4,18 +4,12 @@ package org.hibernate.test.annotations.fkcircularity;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
-import org.jboss.logging.Logger;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-
 import org.hibernate.cfg.Configuration;
-import org.hibernate.cfg.Environment;
 import org.hibernate.dialect.HSQLDialect;
 import org.hibernate.dialect.SQLServerDialect;
-import org.hibernate.service.ServiceRegistry;
-import org.hibernate.testing.ServiceRegistryBuilder;
+import org.jboss.logging.Logger;
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
  * Test case for ANN-722 and ANN-730.

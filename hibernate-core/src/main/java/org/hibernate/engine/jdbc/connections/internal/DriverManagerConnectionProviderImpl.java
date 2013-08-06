@@ -42,7 +42,7 @@ import org.hibernate.internal.CoreMessageLogger;
 import org.hibernate.internal.util.config.ConfigurationHelper;
 import org.hibernate.service.UnknownUnwrapTypeException;
 import org.hibernate.service.spi.Configurable;
-import org.hibernate.service.spi.ServiceRegistryAwareService;
+import org.hibernate.service.spi.ServiceRegistryAware;
 import org.hibernate.service.spi.ServiceRegistryImplementor;
 import org.hibernate.service.spi.Stoppable;
 import org.jboss.logging.Logger;
@@ -57,7 +57,7 @@ import org.jboss.logging.Logger;
  * @author Steve Ebersole
  */
 public class DriverManagerConnectionProviderImpl
-		implements ConnectionProvider, Configurable, Stoppable, ServiceRegistryAwareService {
+		implements ConnectionProvider, Configurable, Stoppable, ServiceRegistryAware {
 	private static final CoreMessageLogger LOG = Logger.getMessageLogger( CoreMessageLogger.class, DriverManagerConnectionProviderImpl.class.getName() );
 	private static final boolean traceEnabled = LOG.isTraceEnabled();
 	private static final boolean debugEnabled = LOG.isDebugEnabled();

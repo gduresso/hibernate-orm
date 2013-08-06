@@ -73,8 +73,8 @@ public class StandardServiceInitiators {
 
 		serviceInitiators.add( ConnectionProviderInitiator.INSTANCE );
 		serviceInitiators.add( MultiTenantConnectionProviderInitiator.INSTANCE );
-		serviceInitiators.add( DatabaseInfoDialectResolverInitiator.INSTANCE );
 		serviceInitiators.add( DialectResolverInitiator.INSTANCE );
+		serviceInitiators.add( DatabaseInfoDialectResolverInitiator.INSTANCE );
 		serviceInitiators.add( DialectFactoryInitiator.INSTANCE );
 		serviceInitiators.add( BatchBuilderInitiator.INSTANCE );
 		serviceInitiators.add( JdbcEnvironmentInitiator.INSTANCE );

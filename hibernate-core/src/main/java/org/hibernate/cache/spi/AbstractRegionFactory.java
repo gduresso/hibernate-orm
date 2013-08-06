@@ -34,13 +34,13 @@ import org.hibernate.cfg.SettingsFactory;
 import org.hibernate.engine.config.spi.ConfigurationService;
 import org.hibernate.engine.config.spi.StandardConverters;
 import org.hibernate.internal.CoreMessageLogger;
-import org.hibernate.service.spi.ServiceRegistryAwareService;
+import org.hibernate.service.spi.ServiceRegistryAware;
 import org.hibernate.service.spi.ServiceRegistryImplementor;
 
 /**
  * @author Strong Liu <stliu@hibernate.org>
  */
-public abstract class AbstractRegionFactory implements RegionFactory, ServiceRegistryAwareService {
+public abstract class AbstractRegionFactory implements RegionFactory, ServiceRegistryAware {
 	private static final CoreMessageLogger LOG = Logger.getMessageLogger(
 			CoreMessageLogger.class,
 			AbstractRegionFactory.class.getName()

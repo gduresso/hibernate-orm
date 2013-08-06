@@ -23,31 +23,21 @@
  */
 package org.hibernate.sql;
 
+import static org.junit.Assert.assertEquals;
+
 import java.util.Collections;
 
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import org.hibernate.QueryException;
-import org.hibernate.cfg.AvailableSettings;
-import org.hibernate.cfg.Configuration;
 import org.hibernate.dialect.Dialect;
 import org.hibernate.dialect.HSQLDialect;
 import org.hibernate.dialect.function.SQLFunctionRegistry;
-import org.hibernate.engine.spi.SessionFactoryImplementor;
-import org.hibernate.metamodel.MetadataSources;
 import org.hibernate.persister.entity.PropertyMapping;
-import org.hibernate.service.ServiceRegistry;
 import org.hibernate.sql.ordering.antlr.ColumnMapper;
 import org.hibernate.sql.ordering.antlr.ColumnReference;
 import org.hibernate.sql.ordering.antlr.SqlValueReference;
-import org.hibernate.testing.ServiceRegistryBuilder;
 import org.hibernate.testing.junit4.BaseCoreFunctionalTestCase;
-import org.hibernate.testing.junit4.BaseUnitTestCase;
 import org.hibernate.type.Type;
-
-import static org.junit.Assert.assertEquals;
+import org.junit.Test;
 
 /**
  * @author Steve Ebersole

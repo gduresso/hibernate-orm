@@ -43,7 +43,7 @@ import org.hibernate.persister.collection.CollectionPersister;
 import org.hibernate.persister.entity.EntityPersister;
 import org.hibernate.persister.spi.PersisterClassResolver;
 import org.hibernate.persister.spi.PersisterFactory;
-import org.hibernate.service.spi.ServiceRegistryAwareService;
+import org.hibernate.service.spi.ServiceRegistryAware;
 import org.hibernate.service.spi.ServiceRegistryImplementor;
 
 /**
@@ -52,7 +52,7 @@ import org.hibernate.service.spi.ServiceRegistryImplementor;
  * @author Gavin King
  * @author Steve Ebersole
  */
-public final class PersisterFactoryImpl implements PersisterFactory, ServiceRegistryAwareService {
+public final class PersisterFactoryImpl implements PersisterFactory, ServiceRegistryAware {
 
 	/**
 	 * The constructor signature for {@link EntityPersister} implementations

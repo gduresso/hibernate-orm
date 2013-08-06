@@ -264,6 +264,7 @@ public class SchemaExport {
 		);
 
 		final Dialect dialect = Dialect.getDialect( configuration.getProperties() );
+		
 		this.dropSQL = configuration.generateDropSchemaScript( dialect );
 		this.createSQL = configuration.generateSchemaCreationScript( dialect );
 	}

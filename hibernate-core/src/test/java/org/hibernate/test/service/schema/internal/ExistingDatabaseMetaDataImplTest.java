@@ -77,7 +77,7 @@ public class ExistingDatabaseMetaDataImplTest extends BaseUnitTestCase {
 		connection.createStatement().execute( "CREATE SEQUENCE seq1" );
 		connection.createStatement().execute( "CREATE SEQUENCE db1.another_schema.seq2" );
 
-		jdbcEnvironment = new JdbcEnvironmentImpl( serviceRegistry, Dialect.getDialect( props ), connection.getMetaData() );
+		jdbcEnvironment = new JdbcEnvironmentImpl( serviceRegistry, Dialect.getDialect( props), connection.getMetaData() );
 	}
 
 	@After

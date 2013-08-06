@@ -23,12 +23,11 @@
  */
 package org.hibernate.dialect;
 
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
 
 import org.hibernate.testing.TestForIssue;
 import org.hibernate.testing.junit4.BaseUnitTestCase;
-
-import static org.junit.Assert.assertEquals;
+import org.junit.Test;
 
 /**
  * Testing of patched support for Derby limit and offset queries; see HHH-3972

@@ -32,7 +32,7 @@ import org.hibernate.HibernateException;
 import org.hibernate.cfg.AvailableSettings;
 import org.hibernate.engine.config.spi.ConfigurationService;
 import org.hibernate.engine.jndi.spi.JndiService;
-import org.hibernate.service.spi.ServiceRegistryAwareService;
+import org.hibernate.service.spi.ServiceRegistryAware;
 import org.hibernate.service.spi.ServiceRegistryImplementor;
 import org.hibernate.service.spi.Stoppable;
 
@@ -54,7 +54,7 @@ import org.hibernate.service.spi.Stoppable;
  */
 public class DataSourceBasedMultiTenantConnectionProviderImpl
 		extends AbstractDataSourceBasedMultiTenantConnectionProviderImpl
-		implements ServiceRegistryAwareService, Stoppable {
+		implements ServiceRegistryAware, Stoppable {
 
 	/**
 	 * Identifies the DataSource name to use for {@link #selectAnyDataSource} handling

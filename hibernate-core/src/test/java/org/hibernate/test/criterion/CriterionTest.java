@@ -23,7 +23,7 @@
  */
 package org.hibernate.test.criterion;
 
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
 
 import org.hibernate.Criteria;
 import org.hibernate.IrrelevantEntity;
@@ -37,10 +37,8 @@ import org.hibernate.dialect.Dialect;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.internal.CriteriaImpl;
 import org.hibernate.loader.criteria.CriteriaQueryTranslator;
-
 import org.hibernate.testing.junit4.BaseUnitTestCase;
-
-import static org.junit.Assert.assertEquals;
+import org.junit.Test;
 
 /**
  * @author Steve Ebersole
@@ -95,6 +93,7 @@ public class CriterionTest extends BaseUnitTestCase {
 	}
 
 	public static class IlikeSupportingDialect extends Dialect {
+
 		@Override
 		public boolean supportsCaseInsensitiveLike() {
 			return true;
@@ -107,6 +106,7 @@ public class CriterionTest extends BaseUnitTestCase {
 	}
 
 	public static class NonIlikeSupportingDialect extends Dialect {
+
 		@Override
 		public boolean supportsCaseInsensitiveLike() {
 			return false;

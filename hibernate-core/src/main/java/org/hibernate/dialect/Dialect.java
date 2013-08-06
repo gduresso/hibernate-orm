@@ -39,12 +39,14 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
-import org.jboss.logging.Logger;
 import org.hibernate.HibernateException;
 import org.hibernate.LockMode;
 import org.hibernate.LockOptions;
 import org.hibernate.MappingException;
 import org.hibernate.NullPrecedence;
+import org.hibernate.boot.registry.classloading.spi.ClassLoaderService;
+import org.hibernate.boot.registry.classloading.spi.ClassLoadingException;
+import org.hibernate.boot.registry.internal.BootstrapServiceRegistryImpl;
 import org.hibernate.cfg.Environment;
 import org.hibernate.dialect.function.CastFunction;
 import org.hibernate.dialect.function.SQLFunction;
@@ -73,7 +75,6 @@ import org.hibernate.id.IdentityGenerator;
 import org.hibernate.id.SequenceGenerator;
 import org.hibernate.id.TableHiLoGenerator;
 import org.hibernate.internal.CoreMessageLogger;
-import org.hibernate.internal.util.ReflectHelper;
 import org.hibernate.internal.util.StringHelper;
 import org.hibernate.internal.util.collections.ArrayHelper;
 import org.hibernate.internal.util.io.StreamCopier;
@@ -86,6 +87,8 @@ import org.hibernate.metamodel.spi.relational.Sequence;
 import org.hibernate.metamodel.spi.relational.Table;
 import org.hibernate.persister.entity.Lockable;
 import org.hibernate.service.ServiceRegistry;
+import org.hibernate.service.spi.ServiceRegistryAware;
+import org.hibernate.service.spi.ServiceRegistryImplementor;
 import org.hibernate.sql.ANSICaseFragment;
 import org.hibernate.sql.ANSIJoinFragment;
 import org.hibernate.sql.CaseFragment;
@@ -101,9 +104,6 @@ import org.hibernate.tool.schema.spi.Exporter;
 import org.hibernate.type.StandardBasicTypes;
 import org.hibernate.type.descriptor.sql.ClobTypeDescriptor;
 import org.hibernate.type.descriptor.sql.SqlTypeDescriptor;
-import org.hibernate.type.StandardBasicTypes;
-import org.hibernate.type.descriptor.sql.ClobTypeDescriptor;
-import org.hibernate.type.descriptor.sql.SqlTypeDescriptor;
 import org.jboss.logging.Logger;
 
 /**
@@ -114,7 +114,7 @@ import org.jboss.logging.Logger;
  * @author Gavin King, David Channon
  */
 @SuppressWarnings("deprecation")
-public abstract class Dialect implements ConversionContext {
+public abstract class Dialect implements ConversionContext, ServiceRegistryAware {
 	private static final CoreMessageLogger LOG = Logger.getMessageLogger(
 			CoreMessageLogger.class,
 			Dialect.class.getName()
@@ -139,6 +139,9 @@ public abstract class Dialect implements ConversionContext {
 	 * Characters used as closing for quoting SQL identifiers
 	 */
 	public static final String CLOSED_QUOTE = "`\"]";
+	
+	protected ServiceRegistry serviceRegistry;
+	protected ClassLoaderService classLoaderService;
 
 	private final TypeNames typeNames = new TypeNames();
 	private final TypeNames hibernateTypeNames = new TypeNames();
@@ -148,7 +151,7 @@ public abstract class Dialect implements ConversionContext {
 	private final Set<String> sqlKeywords = new HashSet<String>();
 
 	private final UniqueDelegate uniqueDelegate;
-
+	
 
 	// constructors and factory methods ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -237,7 +240,12 @@ public abstract class Dialect implements ConversionContext {
 		registerHibernateType( Types.CLOB, StandardBasicTypes.CLOB.getName() );
 		registerHibernateType( Types.REAL, StandardBasicTypes.FLOAT.getName() );
 
-		uniqueDelegate = new DefaultUniqueDelegate( this );
+		this.uniqueDelegate = new DefaultUniqueDelegate( this );
+	}
+	
+	public void injectServices(ServiceRegistryImplementor serviceRegistry) {
+		this.serviceRegistry = serviceRegistry;
+		this.classLoaderService = serviceRegistry.getService( ClassLoaderService.class );
 	}
 
 	/**
@@ -264,7 +272,7 @@ public abstract class Dialect implements ConversionContext {
 		if ( dialectName == null ) {
 			return getDialect();
 		}
-		return instantiateDialect( dialectName );
+		return instantiateDialect( dialectName);
 	}
 
 	private static Dialect instantiateDialect(String dialectName) throws HibernateException {
@@ -272,9 +280,13 @@ public abstract class Dialect implements ConversionContext {
 			throw new HibernateException( "The dialect was not set. Set the property hibernate.dialect." );
 		}
 		try {
-			return (Dialect) ReflectHelper.classForName( dialectName ).newInstance();
+			final ServiceRegistryImplementor serviceRegistry = new BootstrapServiceRegistryImpl();
+			final Dialect dialect = (Dialect) serviceRegistry.getService( ClassLoaderService.class )
+					.classForName( dialectName ).newInstance();
+			dialect.injectServices( serviceRegistry );
+			return dialect;
 		}
-		catch ( ClassNotFoundException cnfe ) {
+		catch ( ClassLoadingException cnfe ) {
 			throw new HibernateException( "Dialect class not found: " + dialectName );
 		}
 		catch ( Exception e ) {

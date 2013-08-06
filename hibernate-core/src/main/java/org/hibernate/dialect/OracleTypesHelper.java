@@ -23,11 +23,12 @@
  */
 package org.hibernate.dialect;
 
-import org.jboss.logging.Logger;
-
 import org.hibernate.HibernateException;
+import org.hibernate.boot.registry.classloading.spi.ClassLoaderService;
+import org.hibernate.boot.registry.classloading.spi.ClassLoadingException;
 import org.hibernate.internal.CoreMessageLogger;
-import org.hibernate.internal.util.ReflectHelper;
+import org.hibernate.service.ServiceRegistry;
+import org.jboss.logging.Logger;
 
 /**
  * A Helper for dealing with the OracleTypes class
@@ -40,42 +41,52 @@ public class OracleTypesHelper {
 	/**
 	 * Singleton access
 	 */
-	public static final OracleTypesHelper INSTANCE = new OracleTypesHelper();
+	private static OracleTypesHelper INSTANCE;
 
 	private static final String ORACLE_TYPES_CLASS_NAME = "oracle.jdbc.OracleTypes";
 	private static final String DEPRECATED_ORACLE_TYPES_CLASS_NAME = "oracle.jdbc.driver.OracleTypes";
 
 	private final int oracleCursorTypeSqlType;
+	
+	private ClassLoaderService classLoaderService;
+	
+	public static OracleTypesHelper getInstance(ServiceRegistry serviceRegistry) {
+		if (INSTANCE == null) {
+			INSTANCE = new OracleTypesHelper( serviceRegistry );
+		}
+		return INSTANCE;
+	}
 
-	private OracleTypesHelper() {
+	private OracleTypesHelper(ServiceRegistry serviceRegistry) {
 		int typeCode = -99;
 		try {
-			typeCode = extractOracleCursorTypeValue();
+			typeCode = extractOracleCursorTypeValue( serviceRegistry );
 		}
 		catch (Exception e) {
 			log.warn( "Unable to resolve Oracle CURSOR JDBC type code", e );
 		}
 		oracleCursorTypeSqlType = typeCode;
+		classLoaderService = serviceRegistry.getService( ClassLoaderService.class );
 	}
 
-	private int extractOracleCursorTypeValue() {
+	private int extractOracleCursorTypeValue(ServiceRegistry serviceRegistry) {
 		try {
-			return locateOracleTypesClass().getField( "CURSOR" ).getInt( null );
+			return locateOracleTypesClass( serviceRegistry ).getField( "CURSOR" ).getInt( null );
 		}
 		catch ( Exception se ) {
 			throw new HibernateException( "Unable to access OracleTypes.CURSOR value", se );
 		}
 	}
 
-	private Class locateOracleTypesClass() {
+	private Class locateOracleTypesClass(ServiceRegistry serviceRegistry) {
 		try {
-			return ReflectHelper.classForName( ORACLE_TYPES_CLASS_NAME );
+			return classLoaderService.classForName( ORACLE_TYPES_CLASS_NAME );
 		}
-		catch (ClassNotFoundException e) {
+		catch (ClassLoadingException e) {
 			try {
-				return ReflectHelper.classForName( DEPRECATED_ORACLE_TYPES_CLASS_NAME );
+				return classLoaderService.classForName( DEPRECATED_ORACLE_TYPES_CLASS_NAME );
 			}
-			catch (ClassNotFoundException e2) {
+			catch (ClassLoadingException e2) {
 				throw new HibernateException(
 						String.format(
 								"Unable to locate OracleTypes class using either known FQN [%s, %s]",

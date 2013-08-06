@@ -30,6 +30,7 @@ import org.hibernate.dialect.Dialect;
 import org.hibernate.engine.jdbc.dialect.spi.BasicSQLExceptionConverter;
 import org.hibernate.engine.jdbc.dialect.spi.AbstractDatabaseMetaDataDialectResolver;
 import org.hibernate.engine.jdbc.dialect.spi.DatabaseInfoDialectResolver;
+import org.hibernate.service.ServiceRegistry;
 
 /**
  * The standard Hibernate Dialect resolver.

@@ -32,7 +32,7 @@ import org.hibernate.internal.CoreMessageLogger;
 import org.hibernate.boot.registry.classloading.spi.ClassLoaderService;
 import org.hibernate.boot.registry.classloading.spi.ClassLoadingException;
 import org.hibernate.engine.config.spi.ConfigurationService;
-import org.hibernate.service.spi.ServiceRegistryAwareService;
+import org.hibernate.service.spi.ServiceRegistryAware;
 import org.hibernate.service.spi.ServiceRegistryImplementor;
 
 /**
@@ -40,7 +40,7 @@ import org.hibernate.service.spi.ServiceRegistryImplementor;
  *
  * @author Steve Ebersole
  */
-public class ConfigurationServiceImpl implements ConfigurationService, ServiceRegistryAwareService {
+public class ConfigurationServiceImpl implements ConfigurationService, ServiceRegistryAware {
 	private static final CoreMessageLogger LOG = Logger.getMessageLogger(
 			CoreMessageLogger.class,
 			ConfigurationServiceImpl.class.getName()

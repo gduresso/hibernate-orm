@@ -23,15 +23,14 @@
  */
 package org.hibernate.dialect;
 
-import java.sql.Types;
+import static org.junit.Assert.assertEquals;
 
-import org.junit.Test;
+import java.sql.Types;
 
 import org.hibernate.mapping.Column;
 import org.hibernate.testing.TestForIssue;
 import org.hibernate.testing.junit4.BaseUnitTestCase;
-
-import static org.junit.Assert.assertEquals;
+import org.junit.Test;
 
 /**
  * DB2 dialect related test cases
