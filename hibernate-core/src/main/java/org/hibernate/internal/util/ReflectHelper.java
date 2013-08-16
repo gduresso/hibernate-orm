@@ -166,23 +166,17 @@ public final class ReflectHelper {
 		assert intf.isInterface() : "Interface to check was not an interface";
 		return intf.isAssignableFrom( clazz );
 	}
-
+	
 	/**
-	 * Perform resolution of a class name.
-	 * <p/>
-	 * Here we first check the context classloader, if one, before delegating to
-	 * {@link Class#forName(String, boolean, ClassLoader)} using the caller's classloader
-	 *
-	 * @param name The class name
-	 * @param caller The class from which this call originated (in order to access that class's loader).
-	 * @param classLoaderService ClassLoaderService
-	 * @return The class reference.
-	 * @throws ClassNotFoundException From {@link Class#forName(String, boolean, ClassLoader)}.
+	 * TODO: Kept only for legacy ORM 4 callers.  Remove in ORM 5.
+	 * @deprecated Replace with direct use of {@link ClassLoaderService}.
 	 */
-	public static Class classForName(String name, Class caller, ClassLoaderService classLoaderService) throws ClassNotFoundException {
+	@Deprecated
+	public static Class classForName(String name, Class caller) throws ClassNotFoundException {
 		try {
-			if ( classLoaderService != null ) {
-				return classLoaderService.classForName(name);
+			ClassLoader classLoader = ClassLoaderHelper.getContextClassLoader();
+			if ( classLoader != null ) {
+				return classLoader.loadClass( name );
 			}
 		}
 		catch ( Throwable ignore ) {
@@ -196,41 +190,20 @@ public final class ReflectHelper {
 	}
 
 	/**
-	 * Perform resolution of a class name.
-	 * <p/>
-	 * Same as {@link #classForName(String, Class)} except that here we delegate to
-	 * {@link Class#forName(String)} if the context classloader lookup is unsuccessful.
-	 *
-	 * @param name The class name
-	 * @param classLoaderService ClassLoaderService
-	 * @return The class reference.
-	 * @throws ClassNotFoundException From {@link Class#forName(String)}.
+	 * TODO: Kept only for legacy ORM 4 callers.  Remove in ORM 5.
+	 * @deprecated Replace with direct use of {@link ClassLoaderService}.
 	 */
-	public static Class classForName(String name, ClassLoaderService classLoaderService) throws ClassNotFoundException {
+	@Deprecated
+	public static Class classForName(String name) throws ClassNotFoundException {
 		try {
-			if ( classLoaderService != null ) {
-				return classLoaderService.classForName(name);
+			ClassLoader classLoader = ClassLoaderHelper.getContextClassLoader();
+			if ( classLoader != null ) {
+				return classLoader.loadClass(name);
 			}
 		}
 		catch ( Throwable ignore ) {
 		}
 		return Class.forName( name );
-	}
-	
-	/**
-	 * TODO: Kept only for org.hibernate.cfg.  Remove in 5.0.
-	 */
-	@Deprecated
-	public static Class classForName(String name, Class caller) throws ClassNotFoundException {
-		return classForName( name, caller, new ClassLoaderServiceImpl() );
-	}
-
-	/**
-	 * TODO: Kept only for org.hibernate.cfg.  Remove in 5.0.
-	 */
-	@Deprecated
-	public static Class classForName(String name) throws ClassNotFoundException {
-		return classForName( name, new ClassLoaderServiceImpl() );
 	}
 
 	/**
@@ -257,30 +230,18 @@ public final class ReflectHelper {
 	}
 
 	/**
-	 * Attempt to resolve the specified property type through reflection.
-	 *
-	 * @param className The name of the class owning the property.
-	 * @param name The name of the property.
-	 * @param classLoaderService ClassLoaderService
-	 * @return The type of the property.
-	 * @throws MappingException Indicates we were unable to locate the property.
+	 * TODO: Kept only for legacy ORM 4 callers.  Remove in ORM 5.
+	 * @deprecated Replace with direct use of {@link ClassLoaderService}.
 	 */
-	public static Class reflectedPropertyClass(String className, String name, ClassLoaderService classLoaderService) throws MappingException {
+	@Deprecated
+	public static Class reflectedPropertyClass(String className, String name) throws MappingException {
 		try {
-			Class clazz = classForName( className, classLoaderService );
+			Class clazz = classForName( className );
 			return getter( clazz, name ).getReturnType();
 		}
 		catch ( ClassNotFoundException cnfe ) {
 			throw new MappingException( "class " + className + " not found while looking for property: " + name, cnfe );
 		}
-	}
-	
-	/**
-	 * TODO: Kept only for org.hibernate.cfg.  Remove in 5.0.
-	 */
-	@Deprecated
-	public static Class reflectedPropertyClass(String className, String name) throws MappingException {
-		return reflectedPropertyClass( className, name, new ClassLoaderServiceImpl() );
 	}
 
 	/**
@@ -330,7 +291,7 @@ public final class ReflectHelper {
 	public static Object getConstantValue(String name, ClassLoaderService classLoaderService) {
 		Class clazz;
 		try {
-			clazz = classForName( StringHelper.qualifier( name ), classLoaderService );
+			clazz = classLoaderService.classForName( name );
 		}
 		catch ( Throwable t ) {
 			return null;
