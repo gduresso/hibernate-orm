@@ -34,6 +34,23 @@ import org.hibernate.tool.schema.extract.spi.DatabaseInformation;
  * @author Steve Ebersole
  */
 public interface SchemaMigrator {
+	
+	/**
+	 * Perform a migration to the specified targets.
+	 *
+	 * @param database The current Hibernate relational model
+	 * @param existingDatabase Access to the information about the existing database.
+	 * @param createSchemas Should the schema(s) actually be created as well ({@code CREATE SCHEMA})?
+	 * @param targets The migration targets
+	 *
+	 * @throws SchemaManagementException
+	 */
+	public void doMigration(
+			Database database,
+			DatabaseInformation existingDatabase,
+			boolean createSchemas,
+			Target... targets) throws SchemaManagementException;
+	
 	/**
 	 * Perform a migration to the specified targets.
 	 *

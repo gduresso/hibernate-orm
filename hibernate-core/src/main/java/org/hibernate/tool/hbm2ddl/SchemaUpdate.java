@@ -31,6 +31,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
 import org.hibernate.HibernateException;
@@ -42,14 +43,20 @@ import org.hibernate.cfg.Configuration;
 import org.hibernate.cfg.Environment;
 import org.hibernate.cfg.NamingStrategy;
 import org.hibernate.dialect.Dialect;
+import org.hibernate.engine.config.spi.ConfigurationService;
+import org.hibernate.engine.jdbc.connections.spi.ConnectionProvider;
+import org.hibernate.engine.jdbc.env.spi.JdbcEnvironment;
 import org.hibernate.engine.jdbc.internal.FormatStyle;
 import org.hibernate.engine.jdbc.internal.Formatter;
 import org.hibernate.engine.jdbc.spi.JdbcServices;
-import org.hibernate.engine.jdbc.spi.SqlExceptionHelper;
 import org.hibernate.engine.jdbc.spi.SqlStatementLogger;
 import org.hibernate.internal.CoreMessageLogger;
 import org.hibernate.internal.util.config.ConfigurationHelper;
+import org.hibernate.metamodel.spi.MetadataImplementor;
 import org.hibernate.service.ServiceRegistry;
+import org.hibernate.tool.schema.extract.spi.DatabaseInformation;
+import org.hibernate.tool.schema.extract.spi.DatabaseInformationBuilder;
+import org.hibernate.tool.schema.spi.SchemaManagementTool;
 import org.jboss.logging.Logger;
 
 /**
@@ -57,29 +64,52 @@ import org.jboss.logging.Logger;
  *
  * @author Christoph Sturm
  * @author Steve Ebersole
+ * @author Brett Meyer
  */
 public class SchemaUpdate {
     private static final CoreMessageLogger LOG = Logger.getMessageLogger(CoreMessageLogger.class, SchemaUpdate.class.getName());
 
-	private final Configuration configuration;
+	private MetadataImplementor metadata;
+    private Configuration configuration;
+    
 	private final ConnectionHelper connectionHelper;
 	private final SqlStatementLogger sqlStatementLogger;
-	private final SqlExceptionHelper sqlExceptionHelper;
-	private final Dialect dialect;
+	private Dialect dialect;
 
 	private final List<Exception> exceptions = new ArrayList<Exception>();
 
 	private Formatter formatter;
 
 	private boolean haltOnError = false;
-	private boolean format = true;
 	private String outputFile = null;
 	private String delimiter;
 
+	public SchemaUpdate(MetadataImplementor metadata, Connection connection){
+		this.metadata = metadata;
+		ServiceRegistry serviceRegistry = metadata.getServiceRegistry();
+		if ( connection != null ) {
+			this.connectionHelper = new SuppliedConnectionHelper( connection );
+		}
+		else {
+			this.connectionHelper = new SuppliedConnectionProviderConnectionHelper(
+					serviceRegistry.getService( ConnectionProvider.class )
+			);
+		}
+		JdbcServices jdbcServices = serviceRegistry.getService( JdbcServices.class );
+		this.sqlStatementLogger = jdbcServices.getSqlStatementLogger();
+		this.formatter = ( sqlStatementLogger.isFormat() ? FormatStyle.DDL : FormatStyle.NONE ).getFormatter();
+	}
+	
+	public SchemaUpdate(MetadataImplementor metadata) {
+		this( metadata, null );
+	}
+
+	@Deprecated
 	public SchemaUpdate(Configuration cfg) throws HibernateException {
 		this( cfg, cfg.getProperties() );
 	}
 
+	@Deprecated
 	public SchemaUpdate(Configuration configuration, Properties properties) throws HibernateException {
 		this.configuration = configuration;
 		this.dialect = Dialect.getDialect( properties );
@@ -89,11 +119,11 @@ public class SchemaUpdate {
 		props.putAll( properties );
 		this.connectionHelper = new ManagedProviderConnectionHelper( props );
 
-		this.sqlExceptionHelper = new SqlExceptionHelper();
 		this.sqlStatementLogger = new SqlStatementLogger( false, true );
 		this.formatter = FormatStyle.DDL.getFormatter();
 	}
 
+	@Deprecated
 	public SchemaUpdate(ServiceRegistry serviceRegistry, Configuration cfg) throws HibernateException {
 		this.configuration = cfg;
 
@@ -101,7 +131,6 @@ public class SchemaUpdate {
 		this.dialect = jdbcServices.getDialect();
 		this.connectionHelper = new SuppliedConnectionProviderConnectionHelper( jdbcServices.getConnectionProvider() );
 
-		this.sqlExceptionHelper = new SqlExceptionHelper();
 		this.sqlStatementLogger = jdbcServices.getSqlStatementLogger();
 		this.formatter = ( sqlStatementLogger.isFormat() ? FormatStyle.DDL : FormatStyle.NONE ).getFormatter();
 	}
@@ -178,28 +207,79 @@ public class SchemaUpdate {
 		execute( Target.interpret( script, doUpdate ) );
 	}
 	
+	// TODO: A lot of this needs to completely go away when 1.) .mapping/.cfg is replaced/repurposed and 2.)
+	// SchemaManagementTool has an execution phase
 	public void execute(Target target) {
         LOG.runningHbm2ddlSchemaUpdate();
-
-		Connection connection = null;
+        
 		Statement stmt = null;
 		Writer outputFileWriter = null;
 
-		exceptions.clear();
+        try {
+        	connectionHelper.prepare( true );
+    		Connection connection = connectionHelper.getConnection();
+    		stmt = connection.createStatement();
 
-		try {
-			DatabaseMetadata meta;
-			try {
-                LOG.fetchingDatabaseMetadata();
-				connectionHelper.prepare( true );
-				connection = connectionHelper.getConnection();
-				meta = new DatabaseMetadata( connection, dialect, configuration );
-				stmt = connection.createStatement();
+    		exceptions.clear();
+    		
+    		List<SchemaUpdateScript> scripts;
+        	
+			if (metadata != null) {
+				// metamodel
+
+				// uses the schema management tool service to generate the scripts
+				// longer term this class should instead just leverage the tool for its execution phase...
+				
+				ServiceRegistry serviceRegistry = metadata.getServiceRegistry();
+
+				SchemaManagementTool schemaManagementTool = serviceRegistry.getService( SchemaManagementTool.class );
+				final List<String> commands = new ArrayList<String>();
+				final org.hibernate.tool.schema.spi.Target scriptTarget = new org.hibernate.tool.schema.spi.Target() {
+					@Override
+					public boolean acceptsImportScriptActions() {
+						return false;
+					}
+
+					@Override
+					public void prepare() {
+						commands.clear();
+					}
+
+					@Override
+					public void accept(String command) {
+						commands.add( command );
+					}
+
+					@Override
+					public void release() {
+					}
+				};
+				
+				final JdbcEnvironment jdbcEnvironment = serviceRegistry.getService( JdbcServices.class ).getJdbcEnvironment();
+				final DatabaseInformation existingDatabase = new DatabaseInformationBuilder( jdbcEnvironment, connection )
+						.prepareAll().build();
+
+				final Map settings = serviceRegistry.getService( ConfigurationService.class ).getSettings();
+				schemaManagementTool.getSchemaMigrator( settings ).doMigration(
+						metadata.getDatabase(), existingDatabase, false, scriptTarget );
+				
+				scripts = new ArrayList<SchemaUpdateScript>();
+				for (String script : commands) {
+					scripts.add( new SchemaUpdateScript( script, false ) );
+				}
 			}
-			catch ( SQLException sqle ) {
-				exceptions.add( sqle );
-                LOG.unableToGetDatabaseMetadata(sqle);
-				throw sqle;
+			else {
+				// configuration
+				try {
+	                LOG.fetchingDatabaseMetadata();
+					DatabaseMetadata meta = new DatabaseMetadata( connection, dialect, configuration );
+					scripts = configuration.generateSchemaUpdateScriptList( dialect, meta );
+				}
+				catch ( SQLException sqle ) {
+					exceptions.add( sqle );
+	                LOG.unableToGetDatabaseMetadata(sqle);
+					throw sqle;
+				}
 			}
 
             LOG.updatingSchema();
@@ -209,7 +289,6 @@ public class SchemaUpdate {
 				outputFileWriter = new FileWriter( outputFile );
 			}
 
-			List<SchemaUpdateScript> scripts = configuration.generateSchemaUpdateScriptList( dialect, meta );
 			for ( SchemaUpdateScript script : scripts ) {
 				String formatted = formatter.format( script.getScript() );
 				try {

@@ -253,7 +253,7 @@ public class Table extends AbstractTableSpecification implements Exportable {
 					.append( ' ' )
 					.append( column.getColumnName().getText( dialect ) )
 					.append( ' ' )
-					.append( column.getSqlType() );
+					.append( column.getSqlTypeString( dialect ) );
 
 
 			final String defaultValue = column.getDefaultValue();

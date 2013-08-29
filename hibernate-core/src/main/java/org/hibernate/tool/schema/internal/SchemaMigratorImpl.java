@@ -27,6 +27,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.hibernate.cfg.AvailableSettings;
 import org.hibernate.cfg.NotYetImplementedException;
 import org.hibernate.engine.jdbc.env.spi.JdbcEnvironment;
 import org.hibernate.metamodel.spi.relational.Database;
@@ -49,12 +50,22 @@ import org.hibernate.tool.schema.spi.Target;
  * @author Steve Ebersole
  */
 public class SchemaMigratorImpl implements SchemaMigrator {
+	
 	@Override
 	public void doMigration(
 			Database database,
 			DatabaseInformation existingDatabase,
 			boolean createSchemas,
 			List<Target> targets) throws SchemaManagementException {
+		doMigration( database, existingDatabase, createSchemas, targets.toArray( new Target[ targets.size() ] ) );
+	}
+	
+	@Override
+	public void doMigration(
+			Database database,
+			DatabaseInformation existingDatabase,
+			boolean createSchemas,
+			Target... targets) throws SchemaManagementException {
 
 		for ( Target target : targets ) {
 			target.prepare();
@@ -72,7 +83,7 @@ public class SchemaMigratorImpl implements SchemaMigrator {
 			Database database,
 			DatabaseInformation existingDatabase,
 			boolean createSchemas,
-			List<Target> targets) {
+			Target[] targets) {
 
 		final Set<String> exportIdentifiers = new HashSet<String>( 50 );
 
@@ -99,10 +110,11 @@ public class SchemaMigratorImpl implements SchemaMigrator {
 
 			for ( Table table : schema.getTables() ) {
 				final TableInformation tableInformation = existingDatabase.getTableInformation( table.getTableName() );
-				if ( tableInformation == null ) {
-					// big problem...
-					throw new SchemaManagementException( "BIG PROBLEM" );
-				}
+				// TODO: Not correct if createTable was used above -- tableInformation still won't exist.
+//				if ( tableInformation == null ) {
+//					// big problem...
+//					throw new SchemaManagementException( "BIG PROBLEM" );
+//				}
 
 				for ( Index index : table.getIndexes() ) {
 					// todo :
@@ -116,6 +128,8 @@ public class SchemaMigratorImpl implements SchemaMigrator {
 					final ForeignKeyInformation foreignKeyInformation = findMatchingForeignKey( foreignKey, tableInformation );
 					// todo : .. implement
 				}
+				
+				// TODO: Unique constraints, using AvailableSettings.UNIQUE_CONSTRAINT_SCHEMA_UPDATE_STRATEGY
 			}
 
 			for ( Sequence sequence : schema.getSequences() ) {
@@ -154,14 +168,14 @@ public class SchemaMigratorImpl implements SchemaMigrator {
 		exportIdentifiers.add( exportIdentifier );
 	}
 
-	private void createTable(Table table, JdbcEnvironment jdbcEnvironment, List<Target> targets) {
+	private void createTable(Table table, JdbcEnvironment jdbcEnvironment, Target[] targets) {
 		applySqlStrings(
 				jdbcEnvironment.getDialect().getTableExporter().getSqlCreateStrings( table, jdbcEnvironment ),
 				targets
 		);
 	}
 
-	private static void applySqlStrings(String[] sqlStrings, List<Target> targets) {
+	private static void applySqlStrings(String[] sqlStrings, Target[] targets) {
 		if ( sqlStrings == null ) {
 			return;
 		}
@@ -177,7 +191,7 @@ public class SchemaMigratorImpl implements SchemaMigrator {
 	protected void migrateTable(
 			Table table,
 			TableInformation tableInformation,
-			List<Target> targets,
+			Target[] targets,
 			JdbcEnvironment jdbcEnvironment) {
 		applySqlStrings(
 				table.sqlAlterStrings( tableInformation, jdbcEnvironment ),

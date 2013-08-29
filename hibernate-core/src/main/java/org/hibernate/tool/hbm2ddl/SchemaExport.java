@@ -71,6 +71,7 @@ import org.jboss.logging.Logger;
  * @author Daniel Bradby
  * @author Gavin King
  * @author Steve Ebersole
+ * @author Brett Meyer
  */
 public class SchemaExport {
 	private static final CoreMessageLogger LOG = Logger.getMessageLogger(
@@ -112,6 +113,7 @@ public class SchemaExport {
 	private String delimiter;
 	private boolean haltOnError = false;
 
+	@Deprecated
 	public SchemaExport(ServiceRegistry serviceRegistry, Configuration configuration) {
 		this.connectionHelper = new SuppliedConnectionProviderConnectionHelper(
 				serviceRegistry.getService( ConnectionProvider.class )
@@ -190,8 +192,9 @@ public class SchemaExport {
 		schemaManagementTool.getSchemaCreator( settings ).doCreation( metadata.getDatabase(), false, target );
 		this.createSQL = commands.toArray( new String[commands.size()] );
 	}
+	
 	public SchemaExport(MetadataImplementor metadata) {
-		this(metadata, null);
+		this( metadata, null );
 	}
 
 	/**
@@ -201,6 +204,7 @@ public class SchemaExport {
 	 *
 	 * @throws HibernateException Indicates problem preparing for schema export.
 	 */
+	@Deprecated
 	public SchemaExport(Configuration configuration) {
 		this( configuration, configuration.getProperties() );
 	}
@@ -248,6 +252,7 @@ public class SchemaExport {
 	 *
 	 * @throws HibernateException Indicates problem preparing for schema export.
 	 */
+	@Deprecated
 	public SchemaExport(Configuration configuration, Connection connection) throws HibernateException {
 		this.connectionHelper = new SuppliedConnectionHelper( connection );
 
@@ -268,6 +273,7 @@ public class SchemaExport {
 		this.createSQL = configuration.generateSchemaCreationScript( dialect );
 	}
 
+	@Deprecated
 	public SchemaExport(
 			ConnectionHelper connectionHelper,
 			String[] dropSql,
