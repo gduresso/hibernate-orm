@@ -83,6 +83,8 @@ public class SchemaUpdate {
 	private boolean haltOnError = false;
 	private String outputFile = null;
 	private String delimiter;
+	
+	private List<SchemaUpdateScript> scripts;
 
 	public SchemaUpdate(MetadataImplementor metadata, Connection connection){
 		this.metadata = metadata;
@@ -221,8 +223,6 @@ public class SchemaUpdate {
     		stmt = connection.createStatement();
 
     		exceptions.clear();
-    		
-    		List<SchemaUpdateScript> scripts;
         	
 			if (metadata != null) {
 				// metamodel
@@ -356,6 +356,10 @@ public class SchemaUpdate {
 	 */
 	public List getExceptions() {
 		return exceptions;
+	}
+	
+	public List<SchemaUpdateScript> getScripts() {
+		return scripts;
 	}
 
 	public void setHaltOnError(boolean haltOnError) {

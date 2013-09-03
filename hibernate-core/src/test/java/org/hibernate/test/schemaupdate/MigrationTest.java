@@ -24,6 +24,7 @@
 package org.hibernate.test.schemaupdate;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 import org.hibernate.cfg.AvailableSettings;
@@ -36,6 +37,7 @@ import org.hibernate.testing.TestForIssue;
 import org.hibernate.testing.junit4.BaseUnitTestCase;
 import org.hibernate.tool.hbm2ddl.SchemaExport;
 import org.hibernate.tool.hbm2ddl.SchemaUpdate;
+import org.hibernate.tool.hbm2ddl.SchemaUpdateScript;
 import org.hibernate.tool.hbm2ddl.UniqueConstraintSchemaUpdateStrategy;
 import org.junit.Test;
 
@@ -44,6 +46,7 @@ import org.junit.Test;
  * @author Brett Meyer
  */
 public class MigrationTest extends BaseUnitTestCase {
+	
 	@Test
 	public void testSimpleColumnAddition() {
 		ServiceRegistry serviceRegistry = ServiceRegistryBuilder.buildServiceRegistry();
@@ -54,22 +57,30 @@ public class MigrationTest extends BaseUnitTestCase {
 		MetadataSources sources = new MetadataSources( serviceRegistry );
 		sources.addResource( resource1 );
 		MetadataImplementor metadata = (MetadataImplementor) new MetadataBuilderImpl(sources).build();
-		new SchemaExport( metadata ).execute( false, true, true, false );
+		SchemaExport schemaExport = new SchemaExport( metadata );
+		schemaExport.execute( true, true, false, true );
+
+		assertEquals( 0, schemaExport.getExceptions().size() );
+		assertEquals( 1, schemaExport.getCreateSqlScripts().length );
 
 		SchemaUpdate v1schemaUpdate = new SchemaUpdate( metadata );
 		v1schemaUpdate.execute( true, true );
 
 		assertEquals( 0, v1schemaUpdate.getExceptions().size() );
+		assertEquals( 0, v1schemaUpdate.getScripts().size() );
 
 		sources = new MetadataSources( serviceRegistry );
 		sources.addResource( resource2 );
 		metadata = (MetadataImplementor) new MetadataBuilderImpl(sources).build();
-
 		SchemaUpdate v2schemaUpdate = new SchemaUpdate( metadata );
 		v2schemaUpdate.execute( true, true );
-		assertEquals( 0, v2schemaUpdate.getExceptions().size() );
 		
-		new SchemaExport( metadata ).drop( false, true );
+		assertEquals( 0, v2schemaUpdate.getExceptions().size() );
+		// should have one "alter table Version add column name..."
+		assertEquals( 1, v2schemaUpdate.getScripts().size() );
+		assertTrue( v2schemaUpdate.getScripts().get( 0 ).getScript().contains( "name" ) );
+		
+		new SchemaExport( metadata ).drop( true, true );
 	}
 	
 	/**
@@ -81,13 +92,13 @@ public class MigrationTest extends BaseUnitTestCase {
 	 */
 	@Test
 	@TestForIssue( jiraKey = "HHH-8162" )
-	public void testConstraintUpdate() {
-		doConstraintUpdate(UniqueConstraintSchemaUpdateStrategy.DROP_RECREATE_QUIETLY, true);
-		doConstraintUpdate(UniqueConstraintSchemaUpdateStrategy.RECREATE_QUIETLY, true);
-		doConstraintUpdate(UniqueConstraintSchemaUpdateStrategy.SKIP, false);
+	public void testUniqueConstraintUpdate() {
+		doUniqueConstraintUpdate(UniqueConstraintSchemaUpdateStrategy.DROP_RECREATE_QUIETLY);
+		doUniqueConstraintUpdate(UniqueConstraintSchemaUpdateStrategy.RECREATE_QUIETLY);
+		doUniqueConstraintUpdate(UniqueConstraintSchemaUpdateStrategy.SKIP);
 	}
 	
-	private void doConstraintUpdate(UniqueConstraintSchemaUpdateStrategy strategy, boolean uniqueConstraintExpected) {
+	private void doUniqueConstraintUpdate(UniqueConstraintSchemaUpdateStrategy strategy) {
 		// original
 		String resource1 = "org/hibernate/test/schemaupdate/2_Version.hbm.xml";
 		// adds unique constraint
@@ -97,7 +108,11 @@ public class MigrationTest extends BaseUnitTestCase {
 		MetadataSources sources = new MetadataSources( serviceRegistry );
 		sources.addResource( resource1 );
 		MetadataImplementor metadata = (MetadataImplementor) new MetadataBuilderImpl(sources).build();
-		new SchemaExport( metadata ).execute( false, true, true, false );
+		SchemaExport schemaExport = new SchemaExport( metadata );
+		schemaExport.execute( true, true, false, true );
+
+		assertEquals( 0, schemaExport.getExceptions().size() );
+		assertEquals( 1, schemaExport.getCreateSqlScripts().length );
 
 		// adds unique constraint
 		StandardServiceRegistryBuilder sbBuilder = new StandardServiceRegistryBuilder();
@@ -109,13 +124,37 @@ public class MigrationTest extends BaseUnitTestCase {
 		SchemaUpdate v2schemaUpdate = new SchemaUpdate( metadata );
 		v2schemaUpdate.execute( true, true );
 		assertEquals( 0, v2schemaUpdate.getExceptions().size() );
+		
+		switch(strategy) {
+		case DROP_RECREATE_QUIETLY:
+		case RECREATE_QUIETLY:
+			assertEquals( 2, v2schemaUpdate.getScripts().size() );
+			
+			boolean namedConstraintCreated = false;
+			boolean unnamedConstraintCreated = false;
+			for(SchemaUpdateScript script : v2schemaUpdate.getScripts()) {
+				if (script.getScript().contains( "descriptionUK" )) {
+					namedConstraintCreated = true;
+					break;
+				}
+				if (script.getScript().contains( "UK_" ) && script.getScript().contains( "name" )) {
+					unnamedConstraintCreated = true;
+					break;
+				}
+			}
+			assertTrue( namedConstraintCreated );
+			assertTrue( unnamedConstraintCreated );
+			break;
+		case SKIP:
+			assertEquals( 0, v2schemaUpdate.getScripts().size() );
+		}
 
+		// run again -- should always result in 0 updates
 		SchemaUpdate v3schemaUpdate = new SchemaUpdate( metadata );
 		v3schemaUpdate.execute( true, true );
 		assertEquals( 0, v3schemaUpdate.getExceptions().size() );
+		assertEquals( 0, v3schemaUpdate.getScripts().size() );
 		
-		new SchemaExport( metadata ).drop( false, true );
+		new SchemaExport( metadata ).drop( true, true );
 	}
-
 }
-

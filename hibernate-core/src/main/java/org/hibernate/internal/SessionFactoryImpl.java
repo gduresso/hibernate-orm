@@ -991,11 +991,20 @@ public final class SessionFactoryImpl
 			LOG.debug("Instantiated session factory");
 		}
 
-		schemaExport = new SchemaExport( metadata ).setImportSqlCommandExtractor( serviceRegistry
-				.getService( ImportSqlCommandExtractor.class ) );
-
 		if ( settings.isAutoCreateSchema() ) {
-			schemaExport.create( false, true );
+			new SchemaExport( metadata )
+					.setImportSqlCommandExtractor( serviceRegistry.getService( ImportSqlCommandExtractor.class ) )
+					.create( false, true );
+		}
+		if ( settings.isAutoUpdateSchema() ) {
+			new SchemaUpdate( metadata ).execute( false, true );
+		}
+		if ( settings.isAutoValidateSchema() ) {
+			new SchemaValidator( metadata ).validate();
+		}
+		if ( settings.isAutoDropSchema() ) {
+			schemaExport = new SchemaExport( metadata )
+					.setImportSqlCommandExtractor( serviceRegistry.getService( ImportSqlCommandExtractor.class ) );
 		}
 
 		currentSessionContext = buildCurrentSessionContext();
