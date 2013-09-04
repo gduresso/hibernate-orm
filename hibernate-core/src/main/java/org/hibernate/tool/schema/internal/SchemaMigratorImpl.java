@@ -27,27 +27,34 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.hibernate.cfg.AvailableSettings;
+import org.hibernate.cfg.Environment;
 import org.hibernate.cfg.NotYetImplementedException;
+import org.hibernate.dialect.Dialect;
 import org.hibernate.engine.jdbc.env.spi.JdbcEnvironment;
+import org.hibernate.internal.util.StringHelper;
 import org.hibernate.metamodel.spi.relational.Database;
 import org.hibernate.metamodel.spi.relational.Exportable;
 import org.hibernate.metamodel.spi.relational.ForeignKey;
+import org.hibernate.metamodel.spi.relational.Identifier;
 import org.hibernate.metamodel.spi.relational.Index;
 import org.hibernate.metamodel.spi.relational.Schema;
 import org.hibernate.metamodel.spi.relational.Sequence;
 import org.hibernate.metamodel.spi.relational.Table;
+import org.hibernate.metamodel.spi.relational.UniqueKey;
+import org.hibernate.tool.hbm2ddl.SchemaUpdateScript;
+import org.hibernate.tool.hbm2ddl.UniqueConstraintSchemaUpdateStrategy;
 import org.hibernate.tool.schema.extract.spi.DatabaseInformation;
 import org.hibernate.tool.schema.extract.spi.ForeignKeyInformation;
+import org.hibernate.tool.schema.extract.spi.IndexInformation;
 import org.hibernate.tool.schema.extract.spi.SequenceInformation;
 import org.hibernate.tool.schema.extract.spi.TableInformation;
 import org.hibernate.tool.schema.spi.SchemaManagementException;
 import org.hibernate.tool.schema.spi.SchemaMigrator;
 import org.hibernate.tool.schema.spi.Target;
 
-
 /**
  * @author Steve Ebersole
+ * @author Brett Meyer
  */
 public class SchemaMigratorImpl implements SchemaMigrator {
 	
@@ -84,12 +91,14 @@ public class SchemaMigratorImpl implements SchemaMigrator {
 			DatabaseInformation existingDatabase,
 			boolean createSchemas,
 			Target[] targets) {
+		
+		final Dialect dialect = database.getJdbcEnvironment().getDialect();
 
 		final Set<String> exportIdentifiers = new HashSet<String>( 50 );
 
 		for ( Schema schema : database.getSchemas() ) {
 			if ( createSchemas ) {
-				// todo : add dialect method for getting a CREATE SCHEMA command and use it here
+				// TODO : add dialect method for getting a CREATE SCHEMA command and use it here
 			}
 
 			for ( Table table : schema.getTables() ) {
@@ -105,7 +114,7 @@ public class SchemaMigratorImpl implements SchemaMigrator {
 					migrateTable( table, tableInformation, targets, database.getJdbcEnvironment() );
 				}
 
-				// todo : handle org.hibernate.mapping.Table.sqlCommentStrings
+				// TODO : handle org.hibernate.mapping.Table.sqlCommentStrings
 			}
 
 			for ( Table table : schema.getTables() ) {
@@ -117,19 +126,41 @@ public class SchemaMigratorImpl implements SchemaMigrator {
 //				}
 
 				for ( Index index : table.getIndexes() ) {
-					// todo :
+					// TODO :
 				}
 
 				if ( !database.getJdbcEnvironment().getDialect().hasAlterTable() ) {
 					continue;
 				}
+				
+				UniqueConstraintSchemaUpdateStrategy constraintMethod = UniqueConstraintSchemaUpdateStrategy.interpret( properties
+						.get( Environment.UNIQUE_CONSTRAINT_SCHEMA_UPDATE_STRATEGY ) );
+				if (! constraintMethod.equals( UniqueConstraintSchemaUpdateStrategy.SKIP )) {
+					for ( UniqueKey uniqueKey : table.getUniqueKeys() ) {
+						// Skip if index already exists. Most of the time, this
+						// won't work since most Dialects use Constraints. However,
+						// keep it for the few that do use Indexes.
+						if ( StringHelper.isNotEmpty( uniqueKey.getName() ) ) {
+							final IndexInformation indexInformation = tableInformation.getIndex( 
+									Identifier.toIdentifier( uniqueKey.getName() ) );
+							if ( indexInformation != null ) {
+								continue;
+							}
+						}
+						String[] createStrings = uniqueKey.sqlCreateStrings( dialect );
+						if ( createStrings.length > 0 )
+							if ( constraintMethod.equals( UniqueConstraintSchemaUpdateStrategy.DROP_RECREATE_QUIETLY ) ) {
+								String[] dropStrings = uniqueKey.sqlDropStrings( dialect );
+								scripts.add( new SchemaUpdateScript( constraintDropString, true) );
+							}
+							scripts.add( new SchemaUpdateScript( constraintString, true) );
+					}
+				}
 
 				for ( ForeignKey foreignKey : table.getForeignKeys() ) {
 					final ForeignKeyInformation foreignKeyInformation = findMatchingForeignKey( foreignKey, tableInformation );
-					// todo : .. implement
+					// TODO : .. implement
 				}
-				
-				// TODO: Unique constraints, using AvailableSettings.UNIQUE_CONSTRAINT_SCHEMA_UPDATE_STRATEGY
 			}
 
 			for ( Sequence sequence : schema.getSequences() ) {
