@@ -27,7 +27,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.hibernate.cfg.Environment;
 import org.hibernate.cfg.NotYetImplementedException;
 import org.hibernate.dialect.Dialect;
 import org.hibernate.engine.jdbc.env.spi.JdbcEnvironment;
@@ -41,8 +40,6 @@ import org.hibernate.metamodel.spi.relational.Schema;
 import org.hibernate.metamodel.spi.relational.Sequence;
 import org.hibernate.metamodel.spi.relational.Table;
 import org.hibernate.metamodel.spi.relational.UniqueKey;
-import org.hibernate.tool.hbm2ddl.SchemaUpdateScript;
-import org.hibernate.tool.hbm2ddl.UniqueConstraintSchemaUpdateStrategy;
 import org.hibernate.tool.schema.extract.spi.DatabaseInformation;
 import org.hibernate.tool.schema.extract.spi.ForeignKeyInformation;
 import org.hibernate.tool.schema.extract.spi.IndexInformation;
@@ -129,32 +126,25 @@ public class SchemaMigratorImpl implements SchemaMigrator {
 					// TODO :
 				}
 
-				if ( !database.getJdbcEnvironment().getDialect().hasAlterTable() ) {
+				if ( !dialect.hasAlterTable() ) {
 					continue;
 				}
 				
-				UniqueConstraintSchemaUpdateStrategy constraintMethod = UniqueConstraintSchemaUpdateStrategy.interpret( properties
-						.get( Environment.UNIQUE_CONSTRAINT_SCHEMA_UPDATE_STRATEGY ) );
-				if (! constraintMethod.equals( UniqueConstraintSchemaUpdateStrategy.SKIP )) {
-					for ( UniqueKey uniqueKey : table.getUniqueKeys() ) {
-						// Skip if index already exists. Most of the time, this
-						// won't work since most Dialects use Constraints. However,
-						// keep it for the few that do use Indexes.
-						if ( StringHelper.isNotEmpty( uniqueKey.getName() ) ) {
-							final IndexInformation indexInformation = tableInformation.getIndex( 
-									Identifier.toIdentifier( uniqueKey.getName() ) );
-							if ( indexInformation != null ) {
-								continue;
-							}
+				for ( UniqueKey uniqueKey : table.getUniqueKeys() ) {
+					// Skip if index already exists. Most of the time, this
+					// won't work since most Dialects use Constraints. However,
+					// keep it for the few that do use Indexes.
+					if ( StringHelper.isNotEmpty( uniqueKey.getName() ) ) {
+						final IndexInformation indexInformation = tableInformation.getIndex( 
+								Identifier.toIdentifier( uniqueKey.getName() ) );
+						if ( indexInformation != null ) {
+							continue;
 						}
-						String[] createStrings = uniqueKey.sqlCreateStrings( dialect );
-						if ( createStrings.length > 0 )
-							if ( constraintMethod.equals( UniqueConstraintSchemaUpdateStrategy.DROP_RECREATE_QUIETLY ) ) {
-								String[] dropStrings = uniqueKey.sqlDropStrings( dialect );
-								scripts.add( new SchemaUpdateScript( constraintDropString, true) );
-							}
-							scripts.add( new SchemaUpdateScript( constraintString, true) );
 					}
+					applySqlStrings(
+							dialect.getUniqueKeyExporter().getSqlCreateStrings( uniqueKey, database.getJdbcEnvironment() ),
+							targets
+					);
 				}
 
 				for ( ForeignKey foreignKey : table.getForeignKeys() ) {
@@ -172,10 +162,7 @@ public class SchemaMigratorImpl implements SchemaMigrator {
 				}
 
 				applySqlStrings(
-						database.getJdbcEnvironment().getDialect().getSequenceExporter().getSqlCreateStrings(
-								sequence,
-								database.getJdbcEnvironment()
-						),
+						dialect.getSequenceExporter().getSqlCreateStrings( sequence, database.getJdbcEnvironment() ),
 						targets
 				);
 			}
