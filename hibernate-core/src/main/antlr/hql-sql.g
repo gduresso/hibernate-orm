@@ -275,11 +275,15 @@ updateStatement!
 	;
 
 deleteStatement
-	: #( DELETE { beforeStatement( "delete", DELETE ); } fromClause (whereClause)? ) {
+	: #( DELETE { beforeStatement( "delete", DELETE ); } fromClause (cascadeDeleteClause)? (whereClause)? ) {
 		beforeStatementCompletion( "delete" );
 		postProcessDelete( #deleteStatement );
 		afterStatementCompletion( "delete" );
 	}
+	;
+
+cascadeDeleteClause
+	: #(CASCADE { handleClauseStart( CASCADE ); } (expr)+ )
 	;
 
 insertStatement

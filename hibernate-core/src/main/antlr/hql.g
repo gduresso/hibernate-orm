@@ -35,6 +35,7 @@ tokens
 	ASCENDING="asc";
 	AVG="avg";
 	BETWEEN="between";
+	CASCADE="cascade";
 	CLASS="class";
 	COUNT="count";
 	DELETE="delete";
@@ -253,7 +254,13 @@ newValue
 deleteStatement
 	: DELETE^
 		(optionalFromTokenFromClause)
+		(deleteCascadeClause)?
 		(whereClause)?
+	;
+
+deleteCascadeClause
+	: CASCADE^ 
+		expression ( COMMA! expression )*
 	;
 
 optionalFromTokenFromClause!

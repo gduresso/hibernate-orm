@@ -55,7 +55,7 @@ public class TableBasedDeleteHandlerImpl
 
 	private final String idInsertSelect;
 	private final List<ParameterSpecification> idSelectParameterSpecifications;
-	private final List<String> deletes;
+	private final String[] deletes;
 
 	public TableBasedDeleteHandlerImpl(SessionFactoryImplementor factory, HqlSqlWalker walker) {
 		this( factory, walker, null, null );
@@ -78,41 +78,24 @@ public class TableBasedDeleteHandlerImpl
 		this.idSelectParameterSpecifications = processedWhereClause.getIdSelectParameterSpecifications();
 		this.idInsertSelect = generateIdInsertSelect( targetedPersister, bulkTargetAlias, processedWhereClause );
 		log.tracev( "Generated ID-INSERT-SELECT SQL (multi-table delete) : {0}", idInsertSelect );
-		
-		final String idSubselect = generateIdSubselect( targetedPersister );
-		deletes = new ArrayList<String>();
-		
-		// If many-to-many, delete the FK row in the collection table.
-		for ( Type type : targetedPersister.getPropertyTypes() ) {
-			if ( type.isCollectionType() ) {
-				CollectionType cType = (CollectionType) type;
-				AbstractCollectionPersister cPersister = (AbstractCollectionPersister)factory.getCollectionPersister( cType.getRole() );
-				if ( cPersister.isManyToMany() ) {
-					deletes.add( generateDelete( cPersister.getTableName(),
-							cPersister.getKeyColumnNames(), idSubselect, "bulk delete - m2m join table cleanup"));
-				}
-			}
-		}
 
 		String[] tableNames = targetedPersister.getConstraintOrderedTableNameClosure();
 		String[][] columnNames = targetedPersister.getContraintOrderedTableKeyColumnClosure();
-		for ( int i = 0; i < tableNames.length; i++ ) {
+		String idSubselect = generateIdSubselect( targetedPersister );
+		deletes = new String[tableNames.length]; 
+		for ( int i = tableNames.length - 1; i >= 0; i-- ) {
 			// TODO : an optimization here would be to consider cascade deletes and not gen those delete statements;
-			//      the difficulty is the ordering of the tables here vs the cascade attributes on the persisters ->
-			//          the table info gotten here should really be self-contained (i.e., a class representation
-			//          defining all the needed attributes), then we could then get an array of those
-			deletes.add( generateDelete( tableNames[i], columnNames[i], idSubselect, "bulk delete"));
+			// the difficulty is the ordering of the tables here vs the cascade attributes on the persisters ->
+			// the table info gotten here should really be self-contained (i.e., a class representation
+			// defining all the needed attributes), then we could then get an array of those
+			final Delete delete = new Delete().setTableName( tableNames[i] ).setWhere(
+					"(" + StringHelper.join( ", ", columnNames[i] ) + ") IN (" + idSubselect + ")" );
+			if ( factory().getSettings().isCommentsEnabled() ) {
+				delete.setComment( "bulk delete" );
+			}
+
+			deletes[i] = delete.toStatementString();
 		}
-	}
-	
-	private String generateDelete(String tableName, String[] columnNames, String idSubselect, String comment) {
-		final Delete delete = new Delete()
-				.setTableName( tableName )
-				.setWhere( "(" + StringHelper.join( ", ", columnNames ) + ") IN (" + idSubselect + ")" );
-		if ( factory().getSettings().isCommentsEnabled() ) {
-			delete.setComment( comment );
-		}
-		return delete.toStatementString();
 	}
 
 	@Override
@@ -122,7 +105,7 @@ public class TableBasedDeleteHandlerImpl
 
 	@Override
 	public String[] getSqlStatements() {
-		return deletes.toArray( new String[deletes.size()] );
+		return deletes;
 	}
 
 	@Override
