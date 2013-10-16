@@ -1,6 +1,11 @@
 //$Id: FumTest.java 10977 2006-12-12 23:28:04Z steve.ebersole@jboss.com $
 package org.hibernate.test.legacy;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -9,6 +14,7 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashSet;
@@ -18,8 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-
-import org.junit.Test;
 
 import org.hibernate.Criteria;
 import org.hibernate.FetchMode;
@@ -40,16 +44,12 @@ import org.hibernate.dialect.SybaseASE15Dialect;
 import org.hibernate.dialect.TimesTenDialect;
 import org.hibernate.testing.SkipForDialect;
 import org.hibernate.transform.Transformers;
-import org.hibernate.type.DateType;
+import org.hibernate.type.CalendarType;
 import org.hibernate.type.EntityType;
 import org.hibernate.type.StandardBasicTypes;
 import org.hibernate.type.StringType;
 import org.hibernate.type.Type;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import org.junit.Test;
 
 public class FumTest extends LegacyTestCase {
 	private static short fumKeyShort = 1;
@@ -317,10 +317,10 @@ public class FumTest extends LegacyTestCase {
 				now.get(java.util.Calendar.MONTH),
 				now.get(java.util.Calendar.DATE)
 			);
-			id.setDate( cal.getTime() );
+			id.setDate( cal );
 		}
 		else {
-			id.setDate( new Date() );
+			id.setDate( Calendar.getInstance() );
 		}
 		id.setString( str );
 
@@ -441,7 +441,7 @@ public class FumTest extends LegacyTestCase {
 
 		// Make sure we can return all of the objects by searching by the date id
 		vList = s.createQuery( "from Fum fum where fum.id.date <= ? and not fum.fum='FRIEND'" )
-				.setParameter( 0, new Date(), StandardBasicTypes.DATE )
+				.setParameter( 0, Calendar.getInstance(), StandardBasicTypes.CALENDAR )
 				.list();
 		assertEquals( "find by composite key query with arguments", 4, vList.size() );
 		s.getTransaction().commit();
@@ -464,7 +464,7 @@ public class FumTest extends LegacyTestCase {
 		assertTrue(types[0] instanceof StringType);
 		assertTrue(types[1] instanceof EntityType);
 		assertTrue(types[2] instanceof StringType);
-		assertTrue(types[3] instanceof DateType);
+		assertTrue(types[3] instanceof CalendarType);
 		Iterator iter = qu.iterate();
 		int j = 0;
 		while ( iter.hasNext() ) {
