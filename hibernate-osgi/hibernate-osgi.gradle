@@ -49,6 +49,9 @@ dependencies {
 	osgiRuntime( libraries.commons_annotations ) { transitive = false }
 	osgiRuntime( libraries.classmate ) { transitive = false }
 	osgiRuntime( libraries.logging ) { transitive = false }
+	osgiRuntime( "org.apache.aries:org.apache.aries.util:1.0.0" ) { transitive = false }
+	osgiRuntime( "org.apache.aries.proxy:org.apache.aries.proxy:1.0.0" ) { transitive = false }
+	osgiRuntime( "org.apache.aries.blueprint:org.apache.aries.blueprint:1.0.0" ) { transitive = false }
 	// needed for BND
 	osgiRuntimeBnd( libraries.jandex ) { transitive = false }
 	osgiRuntimeBnd( "javax.enterprise:cdi-api:1.1" ) { transitive = false }
@@ -128,6 +131,8 @@ task felixProperties << {
 	// TODO: Is there a better, dynamic way of doing this?
 	propertiesFile << " \\\nfile:../hibernate-core/target/libs/hibernate-core-" + hibernateTargetVersion + ".jar"
 	propertiesFile << " \\\nfile:../hibernate-entitymanager/target/libs/hibernate-entitymanager-" + hibernateTargetVersion + ".jar"
+	// envers needed to test extension points
+	propertiesFile << " \\\nfile:../hibernate-envers/target/libs/hibernate-envers-" + hibernateTargetVersion + ".jar"
 	propertiesFile << " \\\nfile:target/libs/hibernate-osgi-" + hibernateTargetVersion + ".jar"
 }
 
@@ -143,7 +148,12 @@ task testClientBundleJar(type: Jar) {
 					"Bundle-Activator" : "org.hibernate.osgi.test.client.OsgiTestActivator",
 					"Bundle-ManifestVersion" : "2",
 					"Bundle-SymbolicName" : "testClientBundle",
-					"Import-Package" : "javassist.util.proxy,javax.persistence,javax.persistence.spi,org.h2,org.hibernate,org.hibernate.proxy,org.osgi.framework")
+					"Import-Package" : "javassist.util.proxy,javax.persistence,javax.persistence.spi,org.h2,org.osgi.framework,"
+							+ "org.hibernate,"
+							+ "org.hibernate.engine.spi,"
+							+ "org.hibernate.integrator.spi,"
+							+ "org.hibernate.proxy,"
+							+ "org.hibernate.service.spi")
 	}
 }
 

@@ -157,6 +157,7 @@ public class OsgiTestCase {
 
 		testHibernateBundle( "org.hibernate.core", Bundle.ACTIVE );
 		testHibernateBundle( "org.hibernate.entitymanager", Bundle.ACTIVE );
+		testHibernateBundle( "org.hibernate.envers", Bundle.ACTIVE );
 		testHibernateBundle( "org.hibernate.osgi", Bundle.ACTIVE );
 	}
 

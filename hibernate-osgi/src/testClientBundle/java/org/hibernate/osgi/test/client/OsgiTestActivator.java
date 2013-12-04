@@ -29,6 +29,9 @@ import javax.persistence.spi.PersistenceProvider;
 
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
+import org.hibernate.engine.spi.SessionFactoryImplementor;
+import org.hibernate.integrator.spi.Integrator;
+import org.hibernate.integrator.spi.IntegratorService;
 import org.hibernate.osgi.test.result.OsgiTestResults;
 import org.hibernate.osgi.test.result.OsgiTestResultsImpl;
 import org.osgi.framework.BundleActivator;
@@ -53,6 +56,7 @@ public class OsgiTestActivator implements BundleActivator {
 		testUnmanagedJpa( context );
 		testUnmanagedNative( context );
 		testLazyLoading( context );
+		testExtensionPoints( context );
 	}
 
 	@Override
@@ -183,6 +187,31 @@ public class OsgiTestActivator implements BundleActivator {
 			}
 			s.getTransaction().commit();
 			s.close();
+		}
+		catch ( Exception e ) {
+			testResult.addFailure( "Exception: " + e.getMessage(), e );
+		}
+	}
+	
+	private void testExtensionPoints(BundleContext context) {
+		try {
+			final ServiceReference sr = context.getServiceReference( SessionFactory.class.getName() );
+			final SessionFactoryImplementor sf = (SessionFactoryImplementor) context.getService( sr );
+			
+			Iterable<Integrator> integrators = sf.getServiceRegistry().getService(IntegratorService.class).getIntegrators();
+			boolean found = false;
+			String s = "found: ";
+			for (Integrator integrator : integrators) {
+				// don't introduce an actual dependency to Envers
+				s += integrator.getClass().getSimpleName() + " ";
+				if (integrator.getClass().getSimpleName().equals( "EnversIntegrator" )) {
+					found = true;
+					break;
+				}
+			}
+			if ( !found ) {
+				testResult.addFailure( "Could not discover EnversIntegrator!  " + s );
+			}
 		}
 		catch ( Exception e ) {
 			testResult.addFailure( "Exception: " + e.getMessage(), e );
