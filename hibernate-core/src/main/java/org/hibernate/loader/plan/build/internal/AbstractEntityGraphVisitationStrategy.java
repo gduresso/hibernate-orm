@@ -29,11 +29,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import javax.persistence.AttributeNode;
 import javax.persistence.Subgraph;
 import javax.persistence.metamodel.Attribute;
-import javax.persistence.metamodel.PluralAttribute;
 
 import org.hibernate.HibernateException;
 import org.hibernate.LockMode;
@@ -56,6 +54,7 @@ import org.hibernate.persister.walking.spi.CollectionIndexDefinition;
 import org.hibernate.persister.walking.spi.CompositionDefinition;
 import org.hibernate.persister.walking.spi.EntityDefinition;
 import org.hibernate.persister.walking.spi.WalkingException;
+
 import org.jboss.logging.Logger;
 
 /**
@@ -107,14 +106,12 @@ public abstract class AbstractEntityGraphVisitationStrategy
 	public void start() {
 		super.start();
 		graphStack.addLast( getRootEntityGraph() );
-		attributeNodeImplementorMap = buildAttributeNodeMap();
 	}
 
 	@Override
 	public void finish() {
 		super.finish();
 		graphStack.removeLast();
-		attributeNodeImplementorMap = Collections.emptyMap();
 		//applying a little internal stack checking
 		if ( !graphStack.isEmpty() || !attributeStack.isEmpty() || !attributeNodeImplementorMap.isEmpty() ) {
 			throw new WalkingException( "Internal stack error" );
@@ -125,6 +122,10 @@ public abstract class AbstractEntityGraphVisitationStrategy
 	public void startingEntity(final EntityDefinition entityDefinition) {
 		//TODO check if the passed in entity definition is the same as the root entity graph (a.k.a they are came from same entity class)?
 		//this maybe the root entity graph or a sub graph.
+		// TODO: May need more than ^^^.  A collection element definition won't have entries
+		// in the map until now (it's available on the graphStack).  This whole thing
+		// needs rethought.
+		attributeNodeImplementorMap = buildAttributeNodeMap();
 		super.startingEntity( entityDefinition );
 	}
 
@@ -142,6 +143,12 @@ public abstract class AbstractEntityGraphVisitationStrategy
 			attributeNodeImplementorMap.put( attribute.getAttributeName(), attribute );
 		}
 		return attributeNodeImplementorMap;
+	}
+
+	@Override
+	public void finishingEntity(final EntityDefinition entityDefinition) {
+		attributeNodeImplementorMap = Collections.emptyMap();
+		super.finishingEntity( entityDefinition );
 	}
 
 	/**
@@ -165,13 +172,7 @@ public abstract class AbstractEntityGraphVisitationStrategy
 			attributeNode = attributeNodeImplementorMap.get( attrName );
 			//here we need to check if there is a subgraph (or sub key graph if it is an indexed attribute )
 			Map<Class, Subgraph> subGraphs = attributeNode.getSubgraphs();
-			Class javaType;
-			if (attributeNode.getAttribute() instanceof PluralAttribute) {
-				javaType = ( (PluralAttribute) attributeNode.getAttribute() ).getElementType().getJavaType();
-			}
-			else {
-				javaType = attributeDefinition.getType().getReturnedClass();
-			}
+			Class javaType = attributeDefinition.getType().getReturnedClass();
 			if ( !subGraphs.isEmpty() && subGraphs.containsKey( javaType ) ) {
 				subGraphNode = (GraphNodeImplementor) subGraphs.get( javaType );
 			}
@@ -229,6 +230,14 @@ public abstract class AbstractEntityGraphVisitationStrategy
 	@Override
 	public void startingCollectionElements(
 			final CollectionElementDefinition elementDefinition) {
+		AttributeNodeImplementor attributeNode = attributeStack.peekLast();
+		GraphNodeImplementor subGraphNode = NON_EXIST_SUBGRAPH_NODE;
+		Map<Class, Subgraph> subGraphs = attributeNode.getSubgraphs();
+		Class javaType = elementDefinition.getType().getReturnedClass();
+		if ( !subGraphs.isEmpty() && subGraphs.containsKey( javaType ) ) {
+			subGraphNode = (GraphNodeImplementor) subGraphs.get( javaType );
+		}
+		graphStack.addLast( subGraphNode );
 		super.startingCollectionElements( elementDefinition );
 	}
 
@@ -236,6 +245,7 @@ public abstract class AbstractEntityGraphVisitationStrategy
 	public void finishingCollectionElements(
 			final CollectionElementDefinition elementDefinition) {
 		super.finishingCollectionElements( elementDefinition );
+		graphStack.removeLast();
 	}
 
 
