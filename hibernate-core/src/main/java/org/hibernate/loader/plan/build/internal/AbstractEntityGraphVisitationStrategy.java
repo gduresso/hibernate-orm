@@ -33,6 +33,7 @@ import java.util.Map;
 import javax.persistence.AttributeNode;
 import javax.persistence.Subgraph;
 import javax.persistence.metamodel.Attribute;
+import javax.persistence.metamodel.PluralAttribute;
 
 import org.hibernate.HibernateException;
 import org.hibernate.LockMode;
@@ -164,7 +165,13 @@ public abstract class AbstractEntityGraphVisitationStrategy
 			attributeNode = attributeNodeImplementorMap.get( attrName );
 			//here we need to check if there is a subgraph (or sub key graph if it is an indexed attribute )
 			Map<Class, Subgraph> subGraphs = attributeNode.getSubgraphs();
-			Class javaType = attributeDefinition.getType().getReturnedClass();
+			Class javaType;
+			if (attributeNode.getAttribute() instanceof PluralAttribute) {
+				javaType = ( (PluralAttribute) attributeNode.getAttribute() ).getElementType().getJavaType();
+			}
+			else {
+				javaType = attributeDefinition.getType().getReturnedClass();
+			}
 			if ( !subGraphs.isEmpty() && subGraphs.containsKey( javaType ) ) {
 				subGraphNode = (GraphNodeImplementor) subGraphs.get( javaType );
 			}
