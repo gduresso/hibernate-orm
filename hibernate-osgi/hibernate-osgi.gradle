@@ -91,15 +91,25 @@ task copyBnd(type: Copy) {
 	into "$buildDir/osgi-lib/bnd"
 }
 
+task copyBndJars(type: Copy) {
+	from configurations.osgiRuntimeBnd
+	into "$buildDir/osgi-lib/bnd/original"
+}
+
 task runBnd(type: JavaExec){
 	main = "-jar"
 	args "$buildDir/osgi-lib/bnd/bnd-2.1.0.jar", "$buildDir/osgi-lib/bnd/cdi-api.bnd", "$buildDir/osgi-lib/bnd/el-api.bnd", "$buildDir/osgi-lib/bnd/jandex.bnd"
 }
 
-task copyToLib(type: Copy) {
+task osgiLibs(type: Copy) {
 	from configurations.osgiRuntime
-	from configurations.osgiRuntimeBnd
+	from "$buildDir/osgi-lib/bnd"
 	into "$buildDir/osgi-lib"
+	
+	include "**/*.jar"
+	exclude "**/bnd*.jar"
+	exclude "**/*.bnd"
+	exclude "original"
 }
 
 task felixProperties << {
@@ -159,9 +169,10 @@ task testClientBundleJar(type: Jar) {
 	}
 }
 
-runBnd.dependsOn copyToLib
 runBnd.dependsOn copyBnd
-felixProperties.dependsOn runBnd
+runBnd.dependsOn copyBndJars
+osgiLibs.dependsOn runBnd
+felixProperties.dependsOn osgiLibs
 test.dependsOn felixProperties
 test.dependsOn testClientBundleJar
 test.dependsOn jar
