@@ -29,7 +29,6 @@ import java.util.List;
 import org.hibernate.TruthValue;
 import org.hibernate.cfg.ObjectNameNormalizer;
 import org.hibernate.internal.CoreMessageLogger;
-import org.hibernate.internal.util.collections.CollectionHelper;
 import org.hibernate.metamodel.internal.ConstraintNamingStrategyHelper.IndexNamingStrategyHelper;
 import org.hibernate.metamodel.internal.ConstraintNamingStrategyHelper.UniqueKeyNamingStrategyHelper;
 import org.hibernate.metamodel.spi.relational.Column;
@@ -203,8 +202,9 @@ public class TableHelper {
 	public void createIndex(
 			final TableSpecification table,
 			final List<Column> columns,
-			final String name) {
-		final Index idx = new Index();
+			final String name,
+			final boolean isUnique) {
+		final Index idx = new Index(isUnique);
 		for ( final Column column : columns ) {
 			idx.addColumn( column );
 		}

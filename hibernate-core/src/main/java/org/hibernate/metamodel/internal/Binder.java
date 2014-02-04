@@ -1156,7 +1156,8 @@ public class Binder implements HelperContext {
 								columns.add( tableHelper.locateOrCreateColumn( table, columnName,
 										new ColumnNamingStrategyHelper( null, false ) ) );
 							}
-							tableHelper.createIndex( table, columns, constraintSource.name() );
+							tableHelper.createIndex( table, columns, indexConstraintSource.name(),
+									indexConstraintSource.isUnique() );
 						}
 					}
 				}
