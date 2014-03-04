@@ -39,6 +39,7 @@ public class Delete {
 	private String where;
 
 	private Map primaryKeyColumns = new LinkedHashMap();	
+	private Map elementColumns = new LinkedHashMap();	
 	
 	private String comment;
 	public Delete setComment(String comment) {
@@ -57,19 +58,44 @@ public class Delete {
 			buf.append( "/* " ).append(comment).append( " */ " );
 		}
 		buf.append( "delete from " ).append(tableName);
-		if ( where != null || !primaryKeyColumns.isEmpty() || versionColumnName != null ) {
+		if ( where != null || !primaryKeyColumns.isEmpty() || !elementColumns.isEmpty() || versionColumnName != null ) {
 			buf.append( " where " );
 		}
 		boolean conditionsAppended = false;
 		Iterator iter = primaryKeyColumns.entrySet().iterator();
 		while ( iter.hasNext() ) {
 			Map.Entry e = (Map.Entry) iter.next();
-			buf.append( e.getKey() ).append( '=' ).append( e.getValue() );
+			buf.append( e.getKey() )
+					.append( "=" )
+					.append( e.getValue() );
 			if ( iter.hasNext() ) {
 				buf.append( " and " );
 			}
 			conditionsAppended = true;
 		}
+		
+		iter = elementColumns.entrySet().iterator();
+		if ( conditionsAppended && iter.hasNext() ) {
+			buf.append( " and " );
+		}
+		conditionsAppended = false;
+		while ( iter.hasNext() ) {
+			Map.Entry e = (Map.Entry) iter.next();
+			buf.append( "(" )
+					.append( e.getKey() )
+					.append( "=" )
+					.append( e.getValue() )
+					.append( " or (" )
+					.append( e.getKey() )
+					.append( " is null and " )
+					.append( e.getValue() )
+					.append( " is null))" );
+			if ( iter.hasNext() ) {
+				buf.append( " and " );
+			}
+			conditionsAppended = true;
+		}
+		
 		if ( where!=null ) {
 			if ( conditionsAppended ) {
 				buf.append( " and " );
@@ -116,7 +142,7 @@ public class Delete {
 	
 	public Delete addPrimaryKeyColumns(String[] columnNames, boolean[] includeColumns, String[] valueExpressions) {
 		for ( int i=0; i<columnNames.length; i++ ) {
-			if( includeColumns[i] ) addPrimaryKeyColumn( columnNames[i], valueExpressions[i] );
+			if( includeColumns[i] ) this.elementColumns.put(columnNames[i], valueExpressions[i]);
 		}
 		return this;
 	}

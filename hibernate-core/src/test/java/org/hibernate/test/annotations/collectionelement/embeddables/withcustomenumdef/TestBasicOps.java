@@ -26,12 +26,15 @@ package org.hibernate.test.annotations.collectionelement.embeddables.withcustome
 import org.junit.Test;
 
 import org.hibernate.Session;
+import org.hibernate.testing.TestForIssue;
 import org.hibernate.testing.junit4.BaseCoreFunctionalTestCase;
 
 import static junit.framework.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 /**
  * @author Steve Ebersole
+ * @author Brett Meyer
  */
 public class TestBasicOps extends BaseCoreFunctionalTestCase {
 	@Override
@@ -53,6 +56,32 @@ public class TestBasicOps extends BaseCoreFunctionalTestCase {
 		assertEquals( 1, q.getIncludedLocations().size() );
 		Location l = q.getIncludedLocations().iterator().next();
 		assertEquals( Location.Type.COUNTY, l.getType() );
+		s.delete( q );
+		s.getTransaction().commit();
+		s.close();
+	}
+	
+	@Test
+	@TestForIssue(jiraKey = "HHH-7072")
+	public void testEmbeddableWithNullables() {
+		Session s = openSession();
+		s.beginTransaction();
+		Query q = new Query( new Location( null, Location.Type.COUNTY ) );
+		s.save( q );
+		s.getTransaction().commit();
+		s.clear();
+		
+		// This update will delete "first", then re-insert "first" and insert "second".  The delete was originally
+		// including "type=?" even when null, causing the delete to fail on most DBs, as opposed to "type is null".
+		s.beginTransaction();
+		q.getIncludedLocations().add( new Location( null, Location.Type.COUNTY ) );
+		s.update( q );
+		s.getTransaction().commit();
+		s.clear();
+		
+		s.beginTransaction();
+		q = (Query) s.get( Query.class, q.getId() );
+		assertEquals( 2, q.getIncludedLocations().size() );
 		s.delete( q );
 		s.getTransaction().commit();
 		s.close();

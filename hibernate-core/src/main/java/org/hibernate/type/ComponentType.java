@@ -26,12 +26,15 @@ package org.hibernate.type;
 import java.io.Serializable;
 import java.lang.reflect.Method;
 import java.sql.CallableStatement;
+import java.sql.ParameterMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.dom4j.Element;
+import org.dom4j.Node;
 import org.hibernate.EntityMode;
 import org.hibernate.FetchMode;
 import org.hibernate.HibernateException;
@@ -47,9 +50,6 @@ import org.hibernate.metamodel.relational.Size;
 import org.hibernate.tuple.StandardProperty;
 import org.hibernate.tuple.component.ComponentMetamodel;
 import org.hibernate.tuple.component.ComponentTuplizer;
-
-import org.dom4j.Element;
-import org.dom4j.Node;
 
 /**
  * Handles "component" mappings
@@ -362,6 +362,11 @@ public class ComponentType extends AbstractType implements CompositeType, Proced
 				if ( settable[loc] ) {
 					propertyTypes[i].nullSafeSet( st, subvalues[i], begin, session );
 					begin++;
+					// TODO: COMPLETE HACK
+					if (st.getParameterMetaData().getParameterCount() > 3) {
+						propertyTypes[i].nullSafeSet( st, subvalues[i], begin, session );
+						begin++;
+					}
 				}
 			}
 			else {
