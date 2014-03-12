@@ -28,6 +28,10 @@ import org.hibernate.dialect.pagination.SQLServer2012LimitHandler;
 import org.hibernate.engine.spi.RowSelection;
 
 
+import org.hibernate.dialect.pagination.LimitHandler;
+import org.hibernate.dialect.pagination.SQLServer2012LimitHandler;
+import org.hibernate.engine.spi.RowSelection;
+
 /**
  * Microsoft SQL Server 2012 Dialect
  *
@@ -62,12 +66,32 @@ public class SQLServer2012Dialect extends SQLServer2008Dialect {
 
 	@Override
 	public String getSequenceNextValString(String sequenceName) {
-		return "select " + getSelectSequenceNextValString( sequenceName );
+		return "select " + getSelectSequenceNextValString(sequenceName);
 	}
 
 	@Override
 	public String getQuerySequencesString() {
 		return "select name from sys.sequences";
+	}
+
+	@Override
+	public boolean supportsVariableLimit() {
+		return true;
+	}
+
+	@Override
+	public boolean useMaxForLimit() {
+		return false;
+	}
+
+	@Override
+	public boolean supportsLimit() {
+		return true;
+	}
+
+	@Override
+	public boolean supportsLimitOffset() {
+		return true;
 	}
 
 	@Override
