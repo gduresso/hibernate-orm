@@ -35,9 +35,9 @@ import org.hibernate.engine.spi.RowSelection;
  * @author Deven Phillips (deven dot phillips at gmail dot com)
  */
 public class SQLServer2012LimitHandler extends AbstractLimitHandler {
-	
+
 	// True if offset greater than 0.
-	private boolean hasOffset = true;
+	private boolean hasOffset = false;
 
 	/**
 	 * Constructs a SQLServer2012LimitHandler
@@ -78,17 +78,18 @@ public class SQLServer2012LimitHandler extends AbstractLimitHandler {
 	 */
 	@Override
 	public String getProcessedSql() {
-		final StringBuilder sb = new StringBuilder(sql);
-		if (sb.charAt(sb.length() - 1) == ';') {
-			sb.setLength(sb.length() - 1);
+		final StringBuilder sb = new StringBuilder( sql );
+		if ( sb.charAt( sb.length() - 1 ) == ';' ) {
+			sb.setLength( sb.length() - 1 );
 		}
 
-		if (LimitHelper.hasFirstRow(selection)) {
+		if ( LimitHelper.hasFirstRow( selection ) ) {
+			hasOffset = true;
 			// Wrap the query within a with statement:
-			sb.append(" offset ? rows fetch next ? rows only");
-		} else {
-			hasOffset = false;
-			sb.append(" offset 0 rows fetch next ? rows only");
+			sb.append( " offset ? rows fetch next ? rows only" );
+		}
+		else {
+			sb.append( " offset 0 rows fetch next ? rows only" );
 		}
 
 		return sb.toString();
