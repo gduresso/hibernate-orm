@@ -34,11 +34,12 @@
         <property name="cache.region.factory_class">org.hibernate.cache.EhCacheRegionFactory</property>
         <property name="net.sf.ehcache.configurationResourceName">file:///[PATH]/unmanaged-jpa/src/main/resources/ehcache.xml</property> -->
     
-        <!-- <property name="hibernate.cache.region_prefix">hibernate.test</property>
+        <property name="hibernate.cache.region_prefix">hibernate.test</property>
 		<property name="cache.use_query_cache">true</property>
         <property name="cache.use_second_level_cache">true</property>
         <property name="cache.use_structured_entries">true</property>
-        <property name="cache.region.factory_class">org.hibernate.cache.infinispan.InfinispanRegionFactory</property> -->
+        <property name="cache.region.factory_class">org.hibernate.cache.infinispan.InfinispanRegionFactory</property>
+        <property name="hibernate.transaction.manager_lookup_class">org.infinispan.transaction.lookup.GenericTransactionManagerLookup</property>
         
         <mapping class="org.hibernate.osgitest.entity.DataPoint"/>
     </session-factory>

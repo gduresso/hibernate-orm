@@ -23,8 +23,12 @@
  */
 package org.hibernate.test.cache.infinispan.tm;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+
 import java.util.Iterator;
 import java.util.Properties;
+
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.Name;
@@ -34,7 +38,20 @@ import javax.naming.StringRefAddr;
 import javax.transaction.Status;
 import javax.transaction.UserTransaction;
 
-import org.infinispan.configuration.cache.ConfigurationBuilder;
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.hibernate.cfg.AvailableSettings;
+import org.hibernate.cfg.Configuration;
+import org.hibernate.cfg.Environment;
+import org.hibernate.engine.transaction.jta.platform.internal.JBossStandAloneJtaPlatform;
+import org.hibernate.mapping.Collection;
+import org.hibernate.mapping.PersistentClass;
+import org.hibernate.service.ServiceRegistry;
+import org.hibernate.stat.Statistics;
+import org.hibernate.test.cache.infinispan.functional.Item;
+import org.hibernate.testing.ServiceRegistryBuilder;
+import org.hibernate.testing.jta.JtaAwareConnectionProviderImpl;
+import org.infinispan.configuration.global.GlobalConfigurationBuilder;
 import org.infinispan.transaction.lookup.JBossStandaloneJTAManagerLookup;
 import org.infinispan.util.logging.Log;
 import org.infinispan.util.logging.LogFactory;
@@ -45,23 +62,6 @@ import org.jnp.server.NamingServer;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-
-import org.hibernate.Session;
-import org.hibernate.SessionFactory;
-import org.hibernate.cfg.AvailableSettings;
-import org.hibernate.cfg.Configuration;
-import org.hibernate.cfg.Environment;
-import org.hibernate.mapping.Collection;
-import org.hibernate.mapping.PersistentClass;
-import org.hibernate.service.ServiceRegistry;
-import org.hibernate.engine.transaction.jta.platform.internal.JBossStandAloneJtaPlatform;
-import org.hibernate.stat.Statistics;
-import org.hibernate.test.cache.infinispan.functional.Item;
-import org.hibernate.testing.ServiceRegistryBuilder;
-import org.hibernate.testing.jta.JtaAwareConnectionProviderImpl;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
 
 /**
  * This is an example test based on http://community.jboss.org/docs/DOC-14617 that shows how to interact with
@@ -85,7 +85,7 @@ public class JBossStandaloneJtaExampleTest {
       jndiServer = startJndiServer();
       ctx = createJndiContext();
       // Inject configuration to initialise transaction manager from config classloader
-      lookup.init(new ConfigurationBuilder().build());
+      lookup.init(new GlobalConfigurationBuilder().build());
       bindTransactionManager();
       bindUserTransaction();
    }

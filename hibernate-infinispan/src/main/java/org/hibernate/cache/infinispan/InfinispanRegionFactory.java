@@ -1,6 +1,5 @@
 package org.hibernate.cache.infinispan;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -35,12 +34,10 @@ import org.hibernate.cache.spi.RegionFactory;
 import org.hibernate.cache.spi.TimestampsRegion;
 import org.hibernate.cache.spi.access.AccessType;
 import org.hibernate.cfg.Settings;
-import org.hibernate.internal.util.ClassLoaderHelper;
 import org.hibernate.internal.util.config.ConfigurationHelper;
-
 import org.infinispan.AdvancedCache;
 import org.infinispan.commands.module.ModuleCommandFactory;
-import org.infinispan.commons.util.FileLookupFactory;
+import org.infinispan.commons.util.FileLookup;
 import org.infinispan.configuration.cache.CacheMode;
 import org.infinispan.configuration.cache.Configuration;
 import org.infinispan.configuration.cache.ConfigurationBuilder;
@@ -400,17 +397,8 @@ public class InfinispanRegionFactory implements RegionFactory {
 			final String configLoc = ConfigurationHelper.getString(
 					INFINISPAN_CONFIG_RESOURCE_PROP, properties, DEF_INFINISPAN_CONFIG_RESOURCE
 			);
-			ClassLoader classLoader = ClassLoaderHelper.getContextClassLoader();
-			InputStream is;
-			try {
-				is = FileLookupFactory.newInstance().lookupFileStrict( configLoc, classLoader );
-			}
-			catch (FileNotFoundException e) {
-				// In some environments (ex: OSGi), hibernate-infinispan may not
-				// be in the app CL.  It's important to also try this CL.
-				classLoader = this.getClass().getClassLoader();
-				is = FileLookupFactory.newInstance().lookupFileStrict( configLoc, classLoader );
-			}
+			final ClassLoader classLoader = this.getClass().getClassLoader();
+			final InputStream is = new FileLookup().lookupFileStrict( configLoc, classLoader );
 			final ParserRegistry parserRegistry = new ParserRegistry( classLoader );
 			final ConfigurationBuilderHolder holder = parserRegistry.parse( is );
 

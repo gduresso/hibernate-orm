@@ -6,5 +6,8 @@
 
   <bean id="strategyRegistrationProvider" class="org.hibernate.cache.infinispan.StrategyRegistrationProviderImpl"/>
   <service ref="strategyRegistrationProvider" interface="org.hibernate.boot.registry.selector.StrategyRegistrationProvider"/>
+
+  <bean id="cacheCommandExtensions" class="org.hibernate.cache.infinispan.util.CacheCommandExtensions"/>
+  <service ref="cacheCommandExtensions" interface="org.infinispan.commands.module.ModuleCommandExtensions"/>
   
 </blueprint>
