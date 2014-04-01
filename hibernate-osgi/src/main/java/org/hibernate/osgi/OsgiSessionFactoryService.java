@@ -23,15 +23,17 @@ package org.hibernate.osgi;
 import java.util.Collection;
 
 import org.hibernate.SessionFactory;
+import org.hibernate.boot.registry.BootstrapServiceRegistry;
 import org.hibernate.boot.registry.BootstrapServiceRegistryBuilder;
+import org.hibernate.boot.registry.StandardServiceRegistry;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 import org.hibernate.boot.registry.selector.StrategyRegistrationProvider;
 import org.hibernate.cfg.AvailableSettings;
-import org.hibernate.cfg.Configuration;
 import org.hibernate.integrator.spi.Integrator;
 import org.hibernate.internal.CoreMessageLogger;
+import org.hibernate.metamodel.MetadataBuilder;
+import org.hibernate.metamodel.MetadataSources;
 import org.hibernate.metamodel.spi.TypeContributor;
-import org.hibernate.service.ServiceRegistry;
 import org.jboss.logging.Logger;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.ServiceFactory;
@@ -84,24 +86,6 @@ public class OsgiSessionFactoryService implements ServiceFactory {
 	public Object getService(Bundle requestingBundle, ServiceRegistration registration) {
 		osgiClassLoader.addBundle( requestingBundle );
 
-		final Configuration configuration = new Configuration();
-		configuration.getProperties().put( AvailableSettings.JTA_PLATFORM, osgiJtaPlatform );
-		
-		// Allow bundles to put the config file somewhere other than the root level.
-		final BundleWiring bundleWiring = (BundleWiring) requestingBundle.adapt( BundleWiring.class );
-		final Collection<String> cfgResources = bundleWiring.listResources( "/", "hibernate.cfg.xml",
-				BundleWiring.LISTRESOURCES_RECURSE );
-		if (cfgResources.size() == 0) {
-			configuration.configure();
-		}
-		else {
-			if (cfgResources.size() > 1) {
-				LOG.warn( "Multiple hibernate.cfg.xml files found in the persistence bundle.  Using the first one discovered." );
-			}
-			String cfgResource = "/" + cfgResources.iterator().next();
-			configuration.configure( cfgResource );
-		}
-
 		final BootstrapServiceRegistryBuilder builder = new BootstrapServiceRegistryBuilder();
 		builder.with( osgiClassLoader );
 
@@ -115,15 +99,37 @@ public class OsgiSessionFactoryService implements ServiceFactory {
 		for ( StrategyRegistrationProvider strategyRegistrationProvider : strategyRegistrationProviders ) {
 			builder.withStrategySelectors( strategyRegistrationProvider );
 		}
+		
+		final BootstrapServiceRegistry bootRegistry = builder.build();
+		
+		final StandardServiceRegistryBuilder serviceRegistryBuilder = new StandardServiceRegistryBuilder( bootRegistry );
+		// Allow bundles to put the config file somewhere other than the root level.
+		final BundleWiring bundleWiring = (BundleWiring) requestingBundle.adapt( BundleWiring.class );
+		final Collection<String> cfgResources = bundleWiring.listResources( "/", "hibernate.cfg.xml",
+				BundleWiring.LISTRESOURCES_RECURSE );
+		if (cfgResources.size() == 0) {
+			serviceRegistryBuilder.configure();
+		}
+		else {
+			if (cfgResources.size() > 1) {
+				LOG.warn( "Multiple hibernate.cfg.xml files found in the persistence bundle.  Using the first one discovered." );
+			}
+			String cfgResource = "/" + cfgResources.iterator().next();
+			serviceRegistryBuilder.configure( cfgResource );
+		}
+
+		serviceRegistryBuilder.applySetting( AvailableSettings.JTA_PLATFORM, osgiJtaPlatform );
+		
+		final StandardServiceRegistry serviceRegistry = serviceRegistryBuilder.build();
+		final MetadataSources sources = new MetadataSources( bootRegistry );
+		final MetadataBuilder metadataBuilder = sources.getMetadataBuilder( serviceRegistry );
         
 		final TypeContributor[] typeContributors = osgiServiceUtil.getServiceImpls( TypeContributor.class );
 		for ( TypeContributor typeContributor : typeContributors ) {
-			configuration.registerTypeContributor( typeContributor );
+			metadataBuilder.with( typeContributor );
 		}
 
-		final ServiceRegistry serviceRegistry = new StandardServiceRegistryBuilder( builder.build() )
-				.applySettings( configuration.getProperties() ).build();
-		return configuration.buildSessionFactory( serviceRegistry );
+		return metadataBuilder.build().buildSessionFactory();
 	}
 
 	@Override

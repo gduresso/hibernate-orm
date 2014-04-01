@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
+
 import javax.persistence.AttributeConverter;
 import javax.persistence.Converter;
 
@@ -49,6 +50,7 @@ import org.hibernate.boot.registry.BootstrapServiceRegistry;
 import org.hibernate.boot.registry.BootstrapServiceRegistryBuilder;
 import org.hibernate.boot.registry.StandardServiceRegistry;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
+import org.hibernate.boot.registry.classloading.spi.ClassLoaderService;
 import org.hibernate.cfg.annotations.NamedEntityGraphDefinition;
 import org.hibernate.cfg.annotations.NamedProcedureCallDefinition;
 import org.hibernate.context.spi.CurrentTenantIdentifierResolver;
@@ -60,6 +62,7 @@ import org.hibernate.internal.CoreMessageLogger;
 import org.hibernate.internal.util.StringHelper;
 import org.hibernate.internal.util.xml.XmlDocument;
 import org.hibernate.jaxb.spi.cfg.JaxbHibernateConfiguration;
+import org.hibernate.jaxb.spi.cfg.JaxbHibernateConfiguration.JaxbSessionFactory.JaxbMapping;
 import org.hibernate.mapping.AuxiliaryDatabaseObject;
 import org.hibernate.metamodel.MetadataBuilder;
 import org.hibernate.metamodel.MetadataSources;
@@ -73,10 +76,7 @@ import org.hibernate.type.CustomType;
 import org.hibernate.type.SerializationException;
 import org.hibernate.usertype.CompositeUserType;
 import org.hibernate.usertype.UserType;
-
 import org.jboss.logging.Logger;
-
-import static org.hibernate.jaxb.spi.cfg.JaxbHibernateConfiguration.JaxbSessionFactory.JaxbMapping;
 
 /**
  * An instance of <tt>Configuration</tt> allows the application
@@ -278,7 +278,8 @@ public class Configuration {
 
 		for ( JaxbMapping jaxbMapping : jaxbHibernateConfiguration.getSessionFactory().getMapping() ) {
 			if ( StringHelper.isNotEmpty( jaxbMapping.getClazz() ) ) {
-				addResource( jaxbMapping.getClazz().replace( '.', '/' ) + ".hbm.xml" );
+				final ClassLoaderService cls = bootstrapServiceRegistry.getService( ClassLoaderService.class );
+				addAnnotatedClass( cls.classForName( jaxbMapping.getClazz() ) );
 			}
 			else if ( StringHelper.isNotEmpty( jaxbMapping.getFile() ) ) {
 				addFile( jaxbMapping.getFile() );
@@ -290,7 +291,7 @@ public class Configuration {
 				addPackage( jaxbMapping.getPackage() );
 			}
 			else if ( StringHelper.isNotEmpty( jaxbMapping.getResource() ) ) {
-				addResource( jaxbMapping.getResource() );
+				addResource( jaxbMapping.getResource().replace( '.', '/' ) + ".hbm.xml" );
 			}
 		}
 	}

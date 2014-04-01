@@ -32,9 +32,9 @@
 		
         <bundle>mvn:org.hibernate.common/hibernate-commons-annotations/4.0.3.Final</bundle>
         
-        <bundle>mvn:org.hibernate/hibernate-core/4.3.0-SNAPSHOT</bundle>
-        <bundle>mvn:org.hibernate/hibernate-entitymanager/4.3.0-SNAPSHOT</bundle>
-        <bundle>mvn:org.hibernate/hibernate-osgi/4.3.0-SNAPSHOT</bundle>
+        <bundle>mvn:org.hibernate/hibernate-core/5.0.0-SNAPSHOT</bundle>
+        <bundle>mvn:org.hibernate/hibernate-entitymanager/5.0.0-SNAPSHOT</bundle>
+        <bundle>mvn:org.hibernate/hibernate-osgi/5.0.0-SNAPSHOT</bundle>
         
         <bundle>mvn:org.hibernate.osgi/unmanaged-jpa/1.0.0</bundle>
 	</feature>

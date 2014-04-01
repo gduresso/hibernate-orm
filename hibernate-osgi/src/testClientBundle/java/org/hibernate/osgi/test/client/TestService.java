@@ -20,8 +20,6 @@
  */
 package org.hibernate.osgi.test.client;
 
-
-
 /**
  * OSGi service interface providing multiple uses of Native and JPA functionality.  The use of a SF/EMF must occur in
  * this separate bundle, rather than attempting to programmatically create a bundle and obtain/use an SF/EMF there.

@@ -39,8 +39,6 @@
         <property name="cache.use_second_level_cache">true</property>
         <property name="cache.use_structured_entries">true</property>
         <property name="cache.region.factory_class">org.hibernate.cache.infinispan.InfinispanRegionFactory</property> -->
-        
-        <mapping class="org.hibernate.osgitest.entity.DataPoint"/>
     </session-factory>
  
 </hibernate-configuration>
