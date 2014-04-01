@@ -73,14 +73,16 @@ public class OsgiClassLoader extends ClassLoader implements Stoppable {
 		}
 		
 		for ( Bundle bundle : bundles ) {
-			try {
-				final Class clazz = bundle.loadClass( name );
-				if ( clazz != null ) {
-					classCache.put( name, clazz );
-					return clazz;
+			if (bundle.getState() == Bundle.ACTIVE) {
+				try {
+					final Class clazz = bundle.loadClass( name );
+					if ( clazz != null ) {
+						classCache.put( name, clazz );
+						return clazz;
+					}
 				}
-			}
-			catch ( Exception ignore ) {
+				catch ( Exception ignore ) {
+				}
 			}
 		}
 		
@@ -112,14 +114,16 @@ public class OsgiClassLoader extends ClassLoader implements Stoppable {
 		}
 		
 		for ( Bundle bundle : bundles ) {
-			try {
-				final URL resource = bundle.getResource( name );
-				if ( resource != null ) {
-					resourceCache.put( name, resource );
-					return resource;
+			if (bundle.getState() == Bundle.ACTIVE) {
+				try {
+					final URL resource = bundle.getResource( name );
+					if ( resource != null ) {
+						resourceCache.put( name, resource );
+						return resource;
+					}
 				}
-			}
-			catch ( Exception ignore ) {
+				catch ( Exception ignore ) {
+				}
 			}
 		}
 		
@@ -153,13 +157,15 @@ public class OsgiClassLoader extends ClassLoader implements Stoppable {
 		final List<Enumeration<URL>> enumerations = new ArrayList<Enumeration<URL>>();
 		
 		for ( Bundle bundle : bundles ) {
-			try {
-				final Enumeration<URL> resources = bundle.getResources( name );
-				if ( resources != null ) {
-					enumerations.add( resources );
+			if (bundle.getState() == Bundle.ACTIVE) {
+				try {
+					final Enumeration<URL> resources = bundle.getResources( name );
+					if ( resources != null ) {
+						enumerations.add( resources );
+					}
 				}
-			}
-			catch ( Exception ignore ) {
+				catch ( Exception ignore ) {
+				}
 			}
 		}
 		
