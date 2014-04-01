@@ -21,9 +21,7 @@
 package org.hibernate.osgitest;
 
 import java.util.List;
-import java.util.Map;
 
-import org.hibernate.envers.DefaultRevisionEntity;
 import org.hibernate.osgitest.entity.DataPoint;
 
 /**
@@ -41,7 +39,7 @@ public interface DataPointService {
 
 	public List<DataPoint> getAll();
 
-	public Map<Number, DefaultRevisionEntity> getRevisions(long id);
+//	public Map<Number, DefaultRevisionEntity> getRevisions(long id);
 
 	public void deleteAll();
 }

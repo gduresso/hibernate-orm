@@ -23,17 +23,15 @@ package org.hibernate.osgi;
 import java.util.Collection;
 
 import org.hibernate.SessionFactory;
-import org.hibernate.boot.registry.BootstrapServiceRegistry;
 import org.hibernate.boot.registry.BootstrapServiceRegistryBuilder;
-import org.hibernate.boot.registry.StandardServiceRegistry;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 import org.hibernate.boot.registry.selector.StrategyRegistrationProvider;
 import org.hibernate.cfg.AvailableSettings;
+import org.hibernate.cfg.Configuration;
 import org.hibernate.integrator.spi.Integrator;
 import org.hibernate.internal.CoreMessageLogger;
-import org.hibernate.metamodel.MetadataBuilder;
-import org.hibernate.metamodel.MetadataSources;
 import org.hibernate.metamodel.spi.TypeContributor;
+import org.hibernate.service.ServiceRegistry;
 import org.jboss.logging.Logger;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.ServiceFactory;
@@ -99,37 +97,31 @@ public class OsgiSessionFactoryService implements ServiceFactory {
 		for ( StrategyRegistrationProvider strategyRegistrationProvider : strategyRegistrationProviders ) {
 			builder.withStrategySelectors( strategyRegistrationProvider );
 		}
+
+		final Configuration configuration = new Configuration( builder.build() );
+		configuration.getProperties().put( AvailableSettings.JTA_PLATFORM, osgiJtaPlatform );
 		
-		final BootstrapServiceRegistry bootRegistry = builder.build();
-		
-		final StandardServiceRegistryBuilder serviceRegistryBuilder = new StandardServiceRegistryBuilder( bootRegistry );
 		// Allow bundles to put the config file somewhere other than the root level.
 		final BundleWiring bundleWiring = (BundleWiring) requestingBundle.adapt( BundleWiring.class );
 		final Collection<String> cfgResources = bundleWiring.listResources( "/", "hibernate.cfg.xml",
 				BundleWiring.LISTRESOURCES_RECURSE );
 		if (cfgResources.size() == 0) {
-			serviceRegistryBuilder.configure();
+			configuration.configure();
 		}
 		else {
 			if (cfgResources.size() > 1) {
 				LOG.warn( "Multiple hibernate.cfg.xml files found in the persistence bundle.  Using the first one discovered." );
 			}
 			String cfgResource = "/" + cfgResources.iterator().next();
-			serviceRegistryBuilder.configure( cfgResource );
+			configuration.configure( cfgResource );
 		}
-
-		serviceRegistryBuilder.applySetting( AvailableSettings.JTA_PLATFORM, osgiJtaPlatform );
-		
-		final StandardServiceRegistry serviceRegistry = serviceRegistryBuilder.build();
-		final MetadataSources sources = new MetadataSources( bootRegistry );
-		final MetadataBuilder metadataBuilder = sources.getMetadataBuilder( serviceRegistry );
         
 		final TypeContributor[] typeContributors = osgiServiceUtil.getServiceImpls( TypeContributor.class );
 		for ( TypeContributor typeContributor : typeContributors ) {
-			metadataBuilder.with( typeContributor );
+			configuration.registerTypeContributor( typeContributor );
 		}
 
-		return metadataBuilder.build().buildSessionFactory();
+		return configuration.buildSessionFactory();
 	}
 
 	@Override

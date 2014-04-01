@@ -16,13 +16,10 @@
  */
 package org.hibernate.osgitest.command;
 
-import java.util.Map;
-
 import org.apache.felix.gogo.commands.Action;
 import org.apache.felix.gogo.commands.Argument;
 import org.apache.felix.gogo.commands.Command;
 import org.apache.felix.service.command.CommandSession;
-import org.hibernate.envers.DefaultRevisionEntity;
 import org.hibernate.osgitest.DataPointService;
 
 @Command(scope = "dp", name = "getRevisions")
@@ -37,11 +34,11 @@ public class GetRevisionsCommand implements Action {
     }
 
     public Object execute(CommandSession session) throws Exception {
-    	Map<Number, DefaultRevisionEntity> revisions = dpService.getRevisions(Long.valueOf( id ));
-        for (Number revisionNum : revisions.keySet()) {
-        	DefaultRevisionEntity dre = revisions.get( revisionNum );
-            System.out.println(revisionNum + ": " + dre.getId() + ", " + dre.getTimestamp());
-        }
+//    	Map<Number, DefaultRevisionEntity> revisions = dpService.getRevisions(Long.valueOf( id ));
+//        for (Number revisionNum : revisions.keySet()) {
+//        	DefaultRevisionEntity dre = revisions.get( revisionNum );
+//            System.out.println(revisionNum + ": " + dre.getId() + ", " + dre.getTimestamp());
+//        }
         return null;
     }
 

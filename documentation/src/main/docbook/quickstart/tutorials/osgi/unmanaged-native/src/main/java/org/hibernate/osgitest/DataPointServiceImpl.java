@@ -20,15 +20,10 @@
  */
 package org.hibernate.osgitest;
 
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 
 import org.hibernate.Session;
 import org.hibernate.criterion.Restrictions;
-import org.hibernate.envers.AuditReader;
-import org.hibernate.envers.AuditReaderFactory;
-import org.hibernate.envers.DefaultRevisionEntity;
 import org.hibernate.osgitest.entity.DataPoint;
 
 /**
@@ -85,12 +80,12 @@ public class DataPointServiceImpl implements DataPointService {
 		return list;
 	}
 	
-	public Map<Number, DefaultRevisionEntity> getRevisions(long id) {
-		Session s = hibernateUtil.getSession();
-		AuditReader reader = AuditReaderFactory.get(s);
-		List<Number> revisionNums = reader.getRevisions( DataPoint.class, id );
-		return reader.findRevisions( DefaultRevisionEntity.class, new HashSet<Number>(revisionNums) );
-	}
+//	public Map<Number, DefaultRevisionEntity> getRevisions(long id) {
+//		Session s = hibernateUtil.getSession();
+//		AuditReader reader = AuditReaderFactory.get(s);
+//		List<Number> revisionNums = reader.getRevisions( DataPoint.class, id );
+//		return reader.findRevisions( DefaultRevisionEntity.class, new HashSet<Number>(revisionNums) );
+//	}
 
 	public void deleteAll() {
 		Session s = hibernateUtil.getSession();

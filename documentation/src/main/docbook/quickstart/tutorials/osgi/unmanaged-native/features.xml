@@ -59,7 +59,7 @@
         <bundle>mvn:org.hibernate/hibernate-core/5.0.0-SNAPSHOT</bundle>
         <!-- TODO: Shouldn't need this, but hibernate-osgi's activator is a catch-all for SF and EMF. -->
         <bundle>mvn:org.hibernate/hibernate-entitymanager/5.0.0-SNAPSHOT</bundle>
-        <bundle>mvn:org.hibernate/hibernate-envers/5.0.0-SNAPSHOT</bundle>
+        <!-- <bundle>mvn:org.hibernate/hibernate-envers/5.0.0-SNAPSHOT</bundle> -->
         <!-- <bundle>mvn:org.hibernate/hibernate-c3p0/5.0.0-SNAPSHOT</bundle> -->
         <!-- <bundle>mvn:org.hibernate/hibernate-proxool/5.0.0-SNAPSHOT</bundle> -->
         <!-- <bundle>mvn:org.hibernate/hibernate-ehcache/5.0.0-SNAPSHOT</bundle> -->
