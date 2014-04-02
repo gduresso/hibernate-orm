@@ -24,6 +24,7 @@
 package org.hibernate.metamodel.spi;
 
 import java.util.List;
+
 import javax.persistence.SharedCacheMode;
 
 import org.hibernate.MultiTenancyStrategy;
@@ -31,12 +32,9 @@ import org.hibernate.boot.registry.StandardServiceRegistry;
 import org.hibernate.boot.spi.CacheRegionDefinition;
 import org.hibernate.cache.spi.access.AccessType;
 import org.hibernate.cfg.NamingStrategy;
-import org.hibernate.metamodel.MetadataSourceProcessingOrder;
 import org.hibernate.metamodel.spi.relational.Database;
 import org.hibernate.type.BasicType;
-
 import org.jboss.jandex.IndexView;
-
 import org.xml.sax.EntityResolver;
 
 /**
@@ -163,9 +161,7 @@ public interface MetadataBuildingOptions {
 	 */
 	PersistentAttributeMemberResolver getPersistentAttributeMemberResolver();
 
-	// todo : these 2 will go away...
-
-	MetadataSourceProcessingOrder getMetadataSourceProcessingOrder();
+	// todo : this will go away...
 
 	EntityResolver getEntityResolver();
 }
