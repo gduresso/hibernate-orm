@@ -37,7 +37,6 @@ import org.hibernate.boot.registry.classloading.spi.ClassLoaderService;
 import org.hibernate.boot.spi.CacheRegionDefinition;
 import org.hibernate.cache.spi.access.AccessType;
 import org.hibernate.cfg.AvailableSettings;
-import org.hibernate.cfg.EJB3DTDEntityResolver;
 import org.hibernate.cfg.EJB3NamingStrategy;
 import org.hibernate.cfg.NamingStrategy;
 import org.hibernate.engine.config.spi.ConfigurationService;
@@ -58,7 +57,6 @@ import org.hibernate.usertype.CompositeUserType;
 import org.hibernate.usertype.UserType;
 import org.jboss.jandex.IndexView;
 import org.jboss.logging.Logger;
-import org.xml.sax.EntityResolver;
 
 /**
  * The implementation of the {@link MetadataBuilder} contract.
@@ -117,12 +115,6 @@ public class MetadataBuilderImpl implements MetadataBuilder, TypeContributions {
 	@Override
 	public MetadataBuilder with(NamingStrategy namingStrategy) {
 		this.options.namingStrategy = namingStrategy;
-		return this;
-	}
-
-	@Override
-	public MetadataBuilder with(EntityResolver entityResolver) {
-		this.options.entityResolver = entityResolver;
 		return this;
 	}
 
@@ -291,9 +283,6 @@ public class MetadataBuilderImpl implements MetadataBuilder, TypeContributions {
 		private PersistentAttributeMemberResolver persistentAttributeMemberResolver =
 				StandardPersistentAttributeMemberResolver.INSTANCE;
 
-		// todo : go away
-		private EntityResolver entityResolver = EJB3DTDEntityResolver.INSTANCE;
-
 		public Options(StandardServiceRegistry serviceRegistry) {
 			this.serviceRegistry = serviceRegistry;
 
@@ -400,11 +389,6 @@ public class MetadataBuilderImpl implements MetadataBuilder, TypeContributions {
 		@Override
 		public PersistentAttributeMemberResolver getPersistentAttributeMemberResolver() {
 			return persistentAttributeMemberResolver;
-		}
-
-		@Override
-		public EntityResolver getEntityResolver() {
-			return entityResolver;
 		}
 	}
 
