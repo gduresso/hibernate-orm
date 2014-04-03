@@ -35,7 +35,6 @@ import org.hibernate.cfg.NamingStrategy;
 import org.hibernate.metamodel.spi.relational.Database;
 import org.hibernate.type.BasicType;
 import org.jboss.jandex.IndexView;
-import org.xml.sax.EntityResolver;
 
 /**
  * Describes the options used while building the Metadata object (during
@@ -160,8 +159,4 @@ public interface MetadataBuildingOptions {
 	 * @return The select resolver strategy
 	 */
 	PersistentAttributeMemberResolver getPersistentAttributeMemberResolver();
-
-	// todo : this will go away...
-
-	EntityResolver getEntityResolver();
 }
