@@ -113,7 +113,7 @@ public class QueryProcessor {
 				JPADotNames.NAMED_NATIVE_QUERIES
 		);
 		for ( AnnotationInstance query : annotations ) {
-			bindNamedNativeQuery( query, bindingContext );
+			bindNamedNativeQuery( bindingContext, query );
 		}
 
 		annotations = JandexHelper.collectionAnnotations(
@@ -122,7 +122,7 @@ public class QueryProcessor {
 				JPADotNames.NAMED_STORED_PROCEDURE_QUERIES
 		);
 		for ( AnnotationInstance query : annotations ) {
-			bindNamedStoredProcedureQuery( query, bindingContext );
+			bindNamedStoredProcedureQuery( bindingContext, query );
 		}
 
 		annotations = JandexHelper.collectionAnnotations(
@@ -140,7 +140,7 @@ public class QueryProcessor {
 				HibernateDotNames.NAMED_NATIVE_QUERIES
 		);
 		for ( AnnotationInstance query : annotations ) {
-			bindNamedNativeQuery( query, bindingContext );
+			bindNamedNativeQuery( bindingContext, query );
 		}
 	}
 
@@ -161,8 +161,7 @@ public class QueryProcessor {
 		if ( annotation.name().equals( JPADotNames.NAMED_QUERY ) ) {
 			bindJPANamedQuery( annotation, builder, name, query, bindingContext );
 		} else {
-			builder.setFlushMode(
-					getFlushMode( JandexHelper.getEnumValue( annotation, "flushMode", FlushModeType.class, classLoaderService ) ) )
+			builder.setFlushMode( getFlushMode( JandexHelper.getEnumValue( annotation, "flushMode", FlushModeType.class, classLoaderService ) ) )
 					.setCacheable( JandexHelper.getValue( annotation, "cacheable", Boolean.class, classLoaderService ) )
 					.setCacheRegion( defaultToNull( JandexHelper.getValue( annotation, "cacheRegion", String.class, classLoaderService ) ) )
 					.setFetchSize( defaultToNull( JandexHelper.getValue( annotation, "fetchSize", Integer.class, classLoaderService ) ) )
@@ -172,51 +171,9 @@ public class QueryProcessor {
 					.setReadOnly( JandexHelper.getValue( annotation, "readOnly", Boolean.class, classLoaderService ) );
 		}
 
-
 		bindingContext.getMetadataCollector().addNamedQuery(builder.createNamedQueryDefinition());
 		LOG.debugf( "Binding named query: %s => %s", name, query );
 	}
-
-	public static FlushMode getFlushMode(FlushModeType flushModeType) {
-		FlushMode flushMode;
-		switch ( flushModeType ) {
-			case ALWAYS:
-				flushMode = FlushMode.ALWAYS;
-				break;
-			case AUTO:
-				flushMode = FlushMode.AUTO;
-				break;
-			case COMMIT:
-				flushMode = FlushMode.COMMIT;
-				break;
-			case MANUAL:
-				flushMode = FlushMode.MANUAL;
-				break;
-			case PERSISTENCE_CONTEXT:
-				flushMode = null;
-				break;
-			default:
-				throw new AssertionFailure( "Unknown flushModeType: " + flushModeType );
-		}
-		return flushMode;
-	}
-	private static CacheMode getCacheMode(CacheModeType cacheModeType) {
-		switch ( cacheModeType ) {
-			case GET:
-				return CacheMode.GET;
-			case IGNORE:
-				return CacheMode.IGNORE;
-			case NORMAL:
-				return CacheMode.NORMAL;
-			case PUT:
-				return CacheMode.PUT;
-			case REFRESH:
-				return CacheMode.REFRESH;
-			default:
-				throw new AssertionFailure( "Unknown cacheModeType: " + cacheModeType );
-		}
-	}
-
 
 	private static void bindJPANamedQuery(
 			AnnotationInstance annotation,
@@ -263,21 +220,84 @@ public class QueryProcessor {
 				.setComment( defaultToNull( getString( hints, QueryHints.COMMENT, bindingContext ) ) )
 				.setParameterTypes( null );
 	}
-
-	private static void bindNamedNativeQuery(AnnotationInstance annotation, AnnotationBindingContext bindingContext) {
+	
+	private static void bindNamedNativeQuery(AnnotationBindingContext bindingContext, AnnotationInstance annotation) {
 		final ClassLoaderService classLoaderService = bindingContext.getBuildingOptions().getServiceRegistry().getService( ClassLoaderService.class );
-		String name = JandexHelper.getValue( annotation, "name", String.class, classLoaderService );
+		final String name = JandexHelper.getValue( annotation, "name", String.class, classLoaderService );
 		if ( StringHelper.isEmpty( name ) ) {
 			throw new AnnotationException( "A named native query must have a name when used in class or package level" );
 		}
+		NamedSQLQueryDefinitionBuilder builder = new NamedSQLQueryDefinitionBuilder();
+		builder.setName( name );
 
-		String query = JandexHelper.getValue( annotation, "query", String.class, classLoaderService );
+		final String query = JandexHelper.getValue( annotation, "query", String.class, classLoaderService );
+		builder.setQuery( query );
+		
+		if ( annotation.name().equals( JPADotNames.NAMED_QUERY ) ) {
+			bindJPANamedNativeQuery( annotation, builder, name, query, bindingContext );
+			
+			final String resultSetMapping = JandexHelper.getValue(
+					annotation, "resultSetMapping", String.class, classLoaderService );
+			if ( StringHelper.isNotEmpty( resultSetMapping ) ) {
+				boolean resultSetMappingExists = bindingContext.getMetadataCollector().getResultSetMappingDefinitions().containsKey( resultSetMapping );
+				if ( !resultSetMappingExists ) {
+					throw new MappingException(
+							String.format(
+									"Named SQL Query [%s] referenced an non-existent result set mapping [%s] ",
+									name,
+									resultSetMapping
+							)
+					);
+				}
+				builder.setResultSetRef( resultSetMapping );
+			}
+			else {
+				AnnotationValue annotationValue = annotation.value( "resultClass" );
+				NativeSQLQueryRootReturn[] queryRoots;
+				if ( annotationValue == null ) {
+					// pure native scalar query
+					queryRoots = new NativeSQLQueryRootReturn[0];
+				}
+				else {
+					queryRoots = new NativeSQLQueryRootReturn[] {
+							new NativeSQLQueryRootReturn(
+									"alias1",
+									annotationValue.asString(),
+									new HashMap<String, String[]>(),
+									LockMode.READ
+							)
+					};
+				}
+				builder.setQueryReturns( queryRoots );
+			}
+		}
+		else {
+			builder.setFlushMode( getFlushMode( JandexHelper.getEnumValue( annotation, "flushMode", FlushModeType.class, classLoaderService ) ) )
+					.setCacheable( JandexHelper.getValue( annotation, "cacheable", Boolean.class, classLoaderService ) )
+					.setCacheRegion( defaultToNull( JandexHelper.getValue( annotation, "cacheRegion", String.class, classLoaderService ) ) )
+					.setFetchSize( defaultToNull( JandexHelper.getValue( annotation, "fetchSize", Integer.class, classLoaderService ) ) )
+					.setTimeout( defaultToNull( JandexHelper.getValue( annotation, "timeout", Integer.class, classLoaderService ) ) )
+					.setComment( JandexHelper.getValue( annotation, "comment", String.class, classLoaderService ) )
+					.setCacheMode( getCacheMode( JandexHelper.getValue( annotation, "cacheMode", CacheModeType.class, classLoaderService ) ) )
+					.setReadOnly( JandexHelper.getValue( annotation, "readOnly", Boolean.class, classLoaderService ) )
+					.setCallable( JandexHelper.getValue( annotation, "callable", Boolean.class, classLoaderService ) )
+					.setQueryReturns( new NativeSQLQueryRootReturn[0] );
+		}
 
-		String resultSetMapping = JandexHelper.getValue( annotation, "resultSetMapping", String.class, classLoaderService );
+		bindingContext.getMetadataCollector().addNamedNativeQuery(builder.createNamedQueryDefinition());
+		LOG.debugf( "Binding named query: %s => %s", name, query );
+	}
 
-		AnnotationInstance[] hints = JandexHelper.getValue( annotation, "hints", AnnotationInstance[].class, classLoaderService );
+	private static void bindJPANamedNativeQuery(
+			AnnotationInstance annotation,
+			NamedSQLQueryDefinitionBuilder builder,
+			String name,
+			String query,
+			AnnotationBindingContext bindingContext){
+		final ClassLoaderService classLoaderService = bindingContext.getBuildingOptions().getServiceRegistry().getService( ClassLoaderService.class );
+		AnnotationInstance[] hints = JandexHelper.getValue( annotation, "hints", AnnotationInstance[].class,
+				classLoaderService );
 
-		boolean cacheable = getBoolean( hints, "org.hibernate.cacheable", name, bindingContext );
 		String cacheRegion = getString( hints, QueryHints.CACHE_REGION, bindingContext );
 		if ( StringHelper.isEmpty( cacheRegion ) ) {
 			cacheRegion = null;
@@ -287,93 +307,78 @@ public class QueryProcessor {
 		if ( timeout != null && timeout < 0 ) {
 			timeout = null;
 		}
-
-		Integer fetchSize = getInteger( hints, QueryHints.FETCH_SIZE, name, bindingContext );
-		if ( fetchSize != null && fetchSize < 0 ) {
-			fetchSize = null;
+		//TODO this 'javax.persistence.lock.timeout' has been mvoed to {@code AvailableSettings} in master
+		//we should change this when we merge this branch back.
+		Integer lockTimeout =  getInteger( hints, "javax.persistence.lock.timeout" , query, bindingContext );
+		lockTimeout = defaultToNull( lockTimeout );
+		
+		LockOptions lockOptions = new LockOptions( LockModeConverter.convertToLockMode( JandexHelper.getEnumValue(
+				annotation,
+				"lockMode",
+				LockModeType.class,
+				classLoaderService
+		) ) );
+		if ( lockTimeout != null ) {
+			lockOptions.setTimeOut( lockTimeout );
 		}
 
-		FlushMode flushMode = getFlushMode( hints, QueryHints.FLUSH_MODE, name, bindingContext );
-		CacheMode cacheMode = getCacheMode( hints, QueryHints.CACHE_MODE, name, bindingContext );
+		builder.setCacheable( getBoolean( hints, QueryHints.CACHEABLE, name, bindingContext ) )
+				.setCacheRegion( cacheRegion )
+				.setTimeout( timeout )
+				.setLockOptions( lockOptions )
+				.setFetchSize( defaultToNull( getInteger( hints, QueryHints.FETCH_SIZE, name, bindingContext ) ) )
+				.setFlushMode( getFlushMode( hints, QueryHints.FLUSH_MODE, name, bindingContext ) )
+				.setCacheMode( getCacheMode( hints, QueryHints.CACHE_MODE, name, bindingContext ) )
+				.setReadOnly( getBoolean( hints, QueryHints.READ_ONLY, name, bindingContext ) )
+				.setComment( defaultToNull( getString( hints, QueryHints.COMMENT, bindingContext ) ) )
+				.setParameterTypes( null )
+				.setCallable( getBoolean( hints, QueryHints.CALLABLE, name, bindingContext ) );
+	}
 
-		boolean readOnly = getBoolean( hints, QueryHints.READ_ONLY, name, bindingContext );
-
-		String comment = getString( hints, QueryHints.COMMENT, bindingContext );
-		if ( StringHelper.isEmpty( comment ) ) {
-			comment = null;
+	public static FlushMode getFlushMode(FlushModeType flushModeType) {
+		FlushMode flushMode;
+		switch ( flushModeType ) {
+			case ALWAYS:
+				flushMode = FlushMode.ALWAYS;
+				break;
+			case AUTO:
+				flushMode = FlushMode.AUTO;
+				break;
+			case COMMIT:
+				flushMode = FlushMode.COMMIT;
+				break;
+			case MANUAL:
+				flushMode = FlushMode.MANUAL;
+				break;
+			case PERSISTENCE_CONTEXT:
+				flushMode = null;
+				break;
+			default:
+				throw new AssertionFailure( "Unknown flushModeType: " + flushModeType );
 		}
-
-		boolean callable = getBoolean( hints, QueryHints.CALLABLE, name, bindingContext );
-		NamedSQLQueryDefinition def;
-		if ( StringHelper.isNotEmpty( resultSetMapping ) ) {
-			boolean resultSetMappingExists = bindingContext.getMetadataCollector().getResultSetMappingDefinitions().containsKey( resultSetMapping );
-			if ( !resultSetMappingExists ) {
-				throw new MappingException(
-						String.format(
-								"Named SQL Query [%s] referenced an non-existent result set mapping [%s] ",
-								name,
-								resultSetMapping
-						)
-				);
-			}
-			def = new NamedSQLQueryDefinitionBuilder().setName( name )
-					.setQuery( query )
-					.setResultSetRef(
-							resultSetMapping
-					)
-					.setQuerySpaces( null )
-					.setCacheable( cacheable )
-					.setCacheRegion( cacheRegion )
-					.setTimeout( timeout )
-					.setFetchSize( fetchSize )
-					.setFlushMode( flushMode )
-					.setCacheMode( cacheMode )
-					.setReadOnly( readOnly )
-					.setComment( comment )
-					.setParameterTypes( null )
-					.setCallable( callable )
-					.createNamedQueryDefinition();
+		return flushMode;
+	}
+	
+	private static CacheMode getCacheMode(CacheModeType cacheModeType) {
+		switch ( cacheModeType ) {
+			case GET:
+				return CacheMode.GET;
+			case IGNORE:
+				return CacheMode.IGNORE;
+			case NORMAL:
+				return CacheMode.NORMAL;
+			case PUT:
+				return CacheMode.PUT;
+			case REFRESH:
+				return CacheMode.REFRESH;
+			default:
+				throw new AssertionFailure( "Unknown cacheModeType: " + cacheModeType );
 		}
-		else {
-			AnnotationValue annotationValue = annotation.value( "resultClass" );
-			NativeSQLQueryRootReturn[] queryRoots;
-			if ( annotationValue == null ) {
-				// pure native scalar query
-				queryRoots = new NativeSQLQueryRootReturn[0];
-			}
-			else {
-				queryRoots = new NativeSQLQueryRootReturn[] {
-						new NativeSQLQueryRootReturn(
-								"alias1",
-								annotationValue.asString(),
-								new HashMap<String, String[]>(),
-								LockMode.READ
-						)
-				};
-			}
-			def = new NamedSQLQueryDefinitionBuilder().setName( name )
-					.setQuery( query )
-					.setQueryReturns( queryRoots )
-					.setQuerySpaces( null )
-					.setCacheable( cacheable )
-					.setCacheRegion( cacheRegion )
-					.setTimeout( timeout )
-					.setFetchSize( fetchSize )
-					.setFlushMode( flushMode )
-					.setCacheMode( cacheMode )
-					.setReadOnly( readOnly )
-					.setComment( comment )
-					.setParameterTypes( null )
-					.setCallable( callable )
-					.createNamedQueryDefinition();
-		}
-		bindingContext.getMetadataCollector().addNamedNativeQuery( def );
-		LOG.debugf( "Binding named native query: %s => %s", name, query );
 	}
 
 	private static void bindNamedStoredProcedureQuery(
-			AnnotationInstance query,
-			AnnotationBindingContext bindingContext) {
+			AnnotationBindingContext bindingContext,
+			AnnotationInstance query) {
 		final String name = query.value( "name" ).asString();
 		final String procedureName = query.value( "procedureName" ).asString();
 		LOG.debugf( "Starting binding of @NamedStoredProcedureQuery(name=%s, procedureName=%s)", name, procedureName );
