@@ -108,7 +108,7 @@ public class HbmXmlTransformer {
 		ormRoot.setPackage( hbmXmlMapping.getPackage() );
 		ormRoot.setSchema( hbmXmlMapping.getSchema() );
 		ormRoot.setCatalog( hbmXmlMapping.getCatalog() );
-		ormRoot.setCustomAccess( hbmXmlMapping.getDefaultAccess() );
+		ormRoot.setAttributeAccessor( hbmXmlMapping.getDefaultAccess() );
 		ormRoot.setDefaultCascade( hbmXmlMapping.getDefaultCascade() );
 		ormRoot.setAutoImport( hbmXmlMapping.isAutoImport() );
 		ormRoot.setDefaultLazy( hbmXmlMapping.isDefaultLazy() );
@@ -600,7 +600,7 @@ public class HbmXmlTransformer {
 			// simple id
 			final JaxbId id = new JaxbId();
 			id.setName( hbmId.getName() );
-			id.setCustomAccess( hbmId.getAccess() );
+			id.setAttributeAccessor( hbmId.getAccess() );
 			
 			if (hbmId.getGenerator() != null) {
 				final JaxbGeneratedValue generator = new JaxbGeneratedValue();
@@ -665,7 +665,7 @@ public class HbmXmlTransformer {
 		if ( isAggregate ) {
 			entity.getAttributes().setEmbeddedId( new JaxbEmbeddedId() );
 			entity.getAttributes().getEmbeddedId().setName( hbmCompositeId.getName() );
-			entity.getAttributes().getEmbeddedId().setCustomAccess( hbmCompositeId.getAccess() );
+			entity.getAttributes().getEmbeddedId().setAttributeAccessor( hbmCompositeId.getAccess() );
 
 			final JaxbEmbeddable embeddable = new JaxbEmbeddable();
 			embeddable.setClazz( hbmCompositeId.getClazz() );
@@ -675,7 +675,7 @@ public class HbmXmlTransformer {
 					final JaxbKeyPropertyElement keyProp = (JaxbKeyPropertyElement) hbmCompositeAttribute;
 					final JaxbBasic basic = new JaxbBasic();
 					basic.setName( keyProp.getName() );
-					basic.setCustomAccess( keyProp.getAccess() );
+					basic.setAttributeAccessor( keyProp.getAccess() );
 					if ( StringHelper.isNotEmpty( keyProp.getColumnAttribute() ) ) {
 						final JaxbColumn column = new JaxbColumn();
 						column.setName( keyProp.getColumnAttribute() );
@@ -694,7 +694,7 @@ public class HbmXmlTransformer {
 					final JaxbKeyManyToOneElement keyManyToOne = (JaxbKeyManyToOneElement) hbmCompositeAttribute;
 					final JaxbManyToOne manyToOne = new JaxbManyToOne();
 					manyToOne.setName( keyManyToOne.getName() );
-					manyToOne.setCustomAccess( keyManyToOne.getAccess() );
+					manyToOne.setAttributeAccessor( keyManyToOne.getAccess() );
 					if ( StringHelper.isNotEmpty( keyManyToOne.getEntityName() ) ) {
 						manyToOne.setTargetEntity( keyManyToOne.getEntityName() );
 					}
@@ -736,7 +736,7 @@ public class HbmXmlTransformer {
 					final JaxbKeyPropertyElement keyProp = (JaxbKeyPropertyElement) hbmCompositeAttribute;
 					final JaxbId id = new JaxbId();
 					id.setName( keyProp.getName() );
-					id.setCustomAccess( keyProp.getAccess() );
+					id.setAttributeAccessor( keyProp.getAccess() );
 					if ( StringHelper.isNotEmpty( keyProp.getColumnAttribute() ) ) {
 						final JaxbColumn column = new JaxbColumn();
 						column.setName( keyProp.getColumnAttribute() );
@@ -756,7 +756,7 @@ public class HbmXmlTransformer {
 					final JaxbManyToOne manyToOne = new JaxbManyToOne();
 					manyToOne.setName( keyManyToOne.getName() );
 					manyToOne.setId( true );
-					manyToOne.setCustomAccess( keyManyToOne.getAccess() );
+					manyToOne.setAttributeAccessor( keyManyToOne.getAccess() );
 					if ( StringHelper.isNotEmpty( keyManyToOne.getEntityName() ) ) {
 						manyToOne.setTargetEntity( keyManyToOne.getEntityName() );
 					}
@@ -796,7 +796,7 @@ public class HbmXmlTransformer {
 			basic.setName( hbmProp.getName() );
 			basic.setOptional( hbmProp.isNotNull() != null && !hbmProp.isNotNull() );
 			basic.setFetch( FetchType.EAGER );
-			basic.setCustomAccess( hbmProp.getAccess() );
+			basic.setAttributeAccessor( hbmProp.getAccess() );
 			basic.setOptimisticLock( hbmProp.isOptimisticLock() );
 
 			if ( StringHelper.isNotEmpty( hbmProp.getTypeAttribute() ) ) {

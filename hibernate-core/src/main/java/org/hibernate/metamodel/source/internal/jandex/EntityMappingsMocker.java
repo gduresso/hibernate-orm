@@ -185,7 +185,7 @@ public class EntityMappingsMocker {
 		AccessType accessType = entityMappings.getAccess();
 		if (accessType == null) {
 			try {
-				accessType = AccessType.valueOf( StringHelper.toUpperCase( entityMappings.getCustomAccess() ) );
+				accessType = AccessType.valueOf( StringHelper.toUpperCase( entityMappings.getAttributeAccessor() ) );
 			}
 			catch (Exception e) {
 				// ignore

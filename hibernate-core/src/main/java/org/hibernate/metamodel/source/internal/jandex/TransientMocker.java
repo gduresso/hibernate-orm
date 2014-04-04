@@ -56,12 +56,12 @@ public class TransientMocker extends PropertyMocker {
 			}
 
 			@Override
-			public String getCustomAccess() {
+			public String getAttributeAccessor() {
 				return null;
 			}
 
 			@Override
-			public void setCustomAccess(String customAccess) {
+			public void setAttributeAccessor(String customAccess) {
 
 			}
 		};
