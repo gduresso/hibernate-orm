@@ -26,9 +26,11 @@ package org.hibernate.metamodel.source.internal.jaxb.hbm;
 import java.util.Date;
 
 import javax.persistence.FetchType;
+import javax.persistence.GeneratedValue;
 import javax.xml.bind.JAXBElement;
 
 import org.hibernate.FlushMode;
+import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.internal.util.StringHelper;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbAttributes;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbBasic;
@@ -42,6 +44,8 @@ import org.hibernate.metamodel.source.internal.jaxb.JaxbEmbeddedId;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbEntity;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbEntityMappings;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbForeignKey;
+import org.hibernate.metamodel.source.internal.jaxb.JaxbGeneratedValue;
+import org.hibernate.metamodel.source.internal.jaxb.JaxbGenerationType;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbHbmCustomSql;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbHbmCustomSqlCheckEnum;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbHbmFetchProfile;
@@ -597,6 +601,13 @@ public class HbmXmlTransformer {
 			final JaxbId id = new JaxbId();
 			id.setName( hbmId.getName() );
 			id.setCustomAccess( hbmId.getAccess() );
+			
+			if (hbmId.getGenerator() != null) {
+				final JaxbGeneratedValue generator = new JaxbGeneratedValue();
+				generator.setGenerator( hbmId.getGenerator().getClazz() );
+				id.setGeneratedValue( generator );
+			}
+			
 			if ( StringHelper.isNotEmpty( hbmId.getTypeAttribute() ) ) {
 				id.setType( new JaxbHbmType() );
 				id.getType().setName( hbmId.getTypeAttribute() );

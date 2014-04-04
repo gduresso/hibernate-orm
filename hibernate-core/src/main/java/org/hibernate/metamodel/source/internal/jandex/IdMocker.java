@@ -26,11 +26,11 @@ package org.hibernate.metamodel.source.internal.jandex;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.hibernate.annotations.common.util.StringHelper;
+import org.hibernate.metamodel.source.internal.annotations.util.HibernateDotNames;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbGeneratedValue;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbId;
 import org.hibernate.metamodel.source.internal.jaxb.PersistentAttribute;
-
-import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationTarget;
 import org.jboss.jandex.AnnotationValue;
 import org.jboss.jandex.ClassInfo;
@@ -59,16 +59,24 @@ public class IdMocker extends PropertyMocker {
 		parseTemporalType( id.getTemporal(), getTarget() );
 	}
 
-	private AnnotationInstance parseGeneratedValue(JaxbGeneratedValue generatedValue, AnnotationTarget target) {
+	private void parseGeneratedValue(JaxbGeneratedValue generatedValue, AnnotationTarget target) {
 		if ( generatedValue == null ) {
-			return null;
+			return;
 		}
+		
+		// @GeneratedValue(generator = "...")
 		List<AnnotationValue> annotationValueList = new ArrayList<AnnotationValue>();
+		MockHelper.enumValue( "strategy", GENERATION_TYPE, generatedValue.getStrategy(), annotationValueList );
 		MockHelper.stringValue( "generator", generatedValue.getGenerator(), annotationValueList );
-		MockHelper.enumValue(
-				"strategy", GENERATION_TYPE, generatedValue.getStrategy(), annotationValueList
-		);
-
-		return create( GENERATED_VALUE, target, annotationValueList );
+		create( GENERATED_VALUE, target, annotationValueList );
+		
+		// TODO: Assumes all generators are generic.  How to check to see if it's custom?
+		if (! StringHelper.isEmpty( generatedValue.getGenerator() )) {
+			// @GenericGenerator(name = "...", strategy = "...")
+			annotationValueList = new ArrayList<AnnotationValue>();
+			MockHelper.stringValue( "name", generatedValue.getGenerator(), annotationValueList );
+			MockHelper.stringValue( "strategy", generatedValue.getGenerator(), annotationValueList );
+			create( HibernateDotNames.GENERIC_GENERATOR, target, annotationValueList );
+		}
 	}
 }

@@ -26,10 +26,12 @@ package org.hibernate.metamodel.source.internal.jandex;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+
 import javax.persistence.AccessType;
 
 import org.hibernate.internal.CoreLogging;
 import org.hibernate.internal.CoreMessageLogger;
+import org.hibernate.internal.util.StringHelper;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbEmbeddable;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbEntity;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbEntityMappings;
@@ -40,7 +42,6 @@ import org.hibernate.service.ServiceRegistry;
 import org.hibernate.xml.spi.BindResult;
 import org.hibernate.xml.spi.Origin;
 import org.hibernate.xml.spi.SourceType;
-
 import org.jboss.jandex.Index;
 import org.jboss.jandex.IndexView;
 
@@ -181,7 +182,16 @@ public class EntityMappingsMocker {
 		entityMappingDefault.setPackageName( entityMappings.getPackage() );
 		entityMappingDefault.setSchema( entityMappings.getSchema() );
 		entityMappingDefault.setCatalog( entityMappings.getCatalog() );
-		entityMappingDefault.setAccess( entityMappings.getAccess() );
+		AccessType accessType = entityMappings.getAccess();
+		if (accessType == null) {
+			try {
+				accessType = AccessType.valueOf( StringHelper.toUpperCase( entityMappings.getCustomAccess() ) );
+			}
+			catch (Exception e) {
+				// ignore
+			}
+		}
+		entityMappingDefault.setAccess( accessType );
 		final Default defaults = new Default();
 		defaults.override( globalDefaults );
 		defaults.override( entityMappingDefault );
