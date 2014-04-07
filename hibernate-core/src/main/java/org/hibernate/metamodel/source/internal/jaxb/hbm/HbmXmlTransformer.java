@@ -26,12 +26,11 @@ package org.hibernate.metamodel.source.internal.jaxb.hbm;
 import java.util.Date;
 
 import javax.persistence.FetchType;
-import javax.persistence.GeneratedValue;
 import javax.xml.bind.JAXBElement;
 
 import org.hibernate.FlushMode;
-import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.internal.util.StringHelper;
+import org.hibernate.metamodel.source.internal.jaxb.JaxbAny;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbAttributes;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbBasic;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbCacheElement;
@@ -40,12 +39,12 @@ import org.hibernate.metamodel.source.internal.jaxb.JaxbColumn;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbDiscriminatorColumn;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbEmbeddable;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbEmbeddableAttributes;
+import org.hibernate.metamodel.source.internal.jaxb.JaxbEmbedded;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbEmbeddedId;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbEntity;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbEntityMappings;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbForeignKey;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbGeneratedValue;
-import org.hibernate.metamodel.source.internal.jaxb.JaxbGenerationType;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbHbmCustomSql;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbHbmCustomSqlCheckEnum;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbHbmFetchProfile;
@@ -63,6 +62,7 @@ import org.hibernate.metamodel.source.internal.jaxb.JaxbJoinColumn;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbManyToOne;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbNamedNativeQuery;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbNamedQuery;
+import org.hibernate.metamodel.source.internal.jaxb.JaxbNaturalId;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbPersistenceUnitMetadata;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbQueryParamType;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbSynchronizeType;
@@ -592,6 +592,7 @@ public class HbmXmlTransformer {
 		transferManyToAnyAttributes( entity, hbmClass );
 		transferPrimitiveArrayAttributes( entity, hbmClass );
 		transferPropertiesGrouping( entity, hbmClass );
+		transferNaturalIdentifiers( entity, hbmClass );
 	}
 
 	private void transferIdentifier(JaxbEntity entity, JaxbClassElement hbmClass) {
@@ -792,56 +793,89 @@ public class HbmXmlTransformer {
 
 	private void transferBasicAttributes(JaxbEntity entity, JaxbClassElement hbmClass) {
 		for ( JaxbPropertyElement hbmProp : hbmClass.getProperty() ) {
-			final JaxbBasic basic = new JaxbBasic();
-			basic.setName( hbmProp.getName() );
-			basic.setOptional( hbmProp.isNotNull() != null && !hbmProp.isNotNull() );
-			basic.setFetch( FetchType.EAGER );
-			basic.setAttributeAccessor( hbmProp.getAccess() );
-			basic.setOptimisticLock( hbmProp.isOptimisticLock() );
+			entity.getAttributes().getBasic().add( transferBasicAttribute( hbmProp ) );
+		}
+	}
 
-			if ( StringHelper.isNotEmpty( hbmProp.getTypeAttribute() ) ) {
+	private void transferNaturalIdentifiers(JaxbEntity entity, JaxbClassElement hbmClass) {
+		if (hbmClass.getNaturalId() == null) {
+			return;
+		}
+		
+		JaxbNaturalId naturalId = new JaxbNaturalId();
+		for ( JaxbPropertyElement hbmProp : hbmClass.getNaturalId().getProperty() ) {
+			naturalId.getBasic().add( transferBasicAttribute( hbmProp ) );
+		}
+		for ( JaxbManyToOneElement hbmM2O : hbmClass.getNaturalId().getManyToOne() ) {
+			naturalId.getManyToOne().add( transferManyToOneAttribute( hbmM2O ) );
+		}
+		for ( JaxbComponentElement hbmComponent : hbmClass.getNaturalId().getComponent() ) {
+			naturalId.getEmbedded().add( transferEmbeddedAttribute( hbmComponent ) );
+		}
+		for ( JaxbAnyElement hbmAny : hbmClass.getNaturalId().getAny() ) {
+			naturalId.getAny().add( transferAnyAttribute( hbmAny ) );
+		}
+		// TODO: hbmClass.getNaturalId().getDynamicComponent?
+		naturalId.setMutable( hbmClass.getNaturalId().isMutable() );
+		entity.getAttributes().setNaturalId( naturalId );
+	}
+
+	private JaxbBasic transferBasicAttribute(JaxbPropertyElement hbmProp) {
+		final JaxbBasic basic = new JaxbBasic();
+		basic.setName( hbmProp.getName() );
+		basic.setOptional( hbmProp.isNotNull() != null && !hbmProp.isNotNull() );
+		basic.setFetch( FetchType.EAGER );
+		basic.setAttributeAccessor( hbmProp.getAccess() );
+		basic.setOptimisticLock( hbmProp.isOptimisticLock() );
+
+		if ( StringHelper.isNotEmpty( hbmProp.getTypeAttribute() ) ) {
+			basic.setType( new JaxbHbmType() );
+			basic.getType().setName( hbmProp.getTypeAttribute() );
+		}
+		else {
+			if ( hbmProp.getType() != null ) {
 				basic.setType( new JaxbHbmType() );
-				basic.getType().setName( hbmProp.getTypeAttribute() );
-			}
-			else {
-				if ( hbmProp.getType() != null ) {
-					basic.setType( new JaxbHbmType() );
-					basic.getType().setName( hbmProp.getType().getName() );
-					for ( JaxbParamElement hbmParam : hbmProp.getType().getParam() ) {
-						final JaxbHbmParam param = new JaxbHbmParam();
-						param.setName( hbmParam.getName() );
-						param.setValue( hbmParam.getValue() );
-						basic.getType().getParam().add( param );
-					}
+				basic.getType().setName( hbmProp.getType().getName() );
+				for ( JaxbParamElement hbmParam : hbmProp.getType().getParam() ) {
+					final JaxbHbmParam param = new JaxbHbmParam();
+					param.setName( hbmParam.getName() );
+					param.setValue( hbmParam.getValue() );
+					basic.getType().getParam().add( param );
 				}
 			}
+		}
 
-			if ( StringHelper.isNotEmpty( hbmProp.getFormulaAttribute() ) ) {
-				basic.getColumnOrFormula().add( hbmProp.getFormulaAttribute() );
+		if ( StringHelper.isNotEmpty( hbmProp.getFormulaAttribute() ) ) {
+			basic.getColumnOrFormula().add( hbmProp.getFormulaAttribute() );
+		}
+		else if ( StringHelper.isNotEmpty( hbmProp.getColumnAttribute() ) ) {
+			final JaxbColumn column = new JaxbColumn();
+			column.setName( hbmProp.getColumnAttribute() );
+			basic.getColumnOrFormula().add( column );
+		}
+		else if ( !hbmProp.getFormula().isEmpty() ) {
+			for ( String formula : hbmProp.getFormula() ) {
+				basic.getColumnOrFormula().add( formula );
 			}
-			else if ( StringHelper.isNotEmpty( hbmProp.getColumnAttribute() ) ) {
+		}
+		else {
+			for ( JaxbColumnElement hbmColumn : hbmProp.getColumn() ) {
 				final JaxbColumn column = new JaxbColumn();
-				column.setName( hbmProp.getColumnAttribute() );
+				transferColumn( column, hbmColumn, null, hbmProp.isInsert(), hbmProp.isUpdate() );
 				basic.getColumnOrFormula().add( column );
 			}
-			else if ( !hbmProp.getFormula().isEmpty() ) {
-				for ( String formula : hbmProp.getFormula() ) {
-					basic.getColumnOrFormula().add( formula );
-				}
-			}
-			else {
-				for ( JaxbColumnElement hbmColumn : hbmProp.getColumn() ) {
-					final JaxbColumn column = new JaxbColumn();
-					transferColumn( column, hbmColumn, null, hbmProp.isInsert(), hbmProp.isUpdate() );
-					basic.getColumnOrFormula().add( column );
-				}
-			}
-			entity.getAttributes().getBasic().add( basic );
 		}
+		
+		return basic;
 	}
 
 	private void transferEmbeddedAttributes(JaxbEntity entity, JaxbClassElement hbmClass) {
 
+	}
+
+	private JaxbEmbedded transferEmbeddedAttribute(JaxbComponentElement hbmComponent) {
+		// TODO
+		return new JaxbEmbedded();
 	}
 
 	private void transferOneToOneAttributes(JaxbEntity entity, JaxbClassElement hbmClass) {
@@ -852,12 +886,22 @@ public class HbmXmlTransformer {
 
 	}
 
+	private JaxbManyToOne transferManyToOneAttribute(JaxbManyToOneElement hbmM2O) {
+		// TODO
+		return new JaxbManyToOne();
+	}
+
 	private void transferManyToManyAttributes(JaxbEntity entity, JaxbClassElement hbmClass) {
 
 	}
 
 	private void transferAnyAttributes(JaxbEntity entity, JaxbClassElement hbmClass) {
 
+	}
+
+	private JaxbAny transferAnyAttribute(JaxbAnyElement hbmAny) {
+		// TODO
+		return new JaxbAny();
 	}
 
 	private void transferManyToAnyAttributes(JaxbEntity entity, JaxbClassElement hbmClass) {
