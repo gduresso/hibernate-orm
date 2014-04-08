@@ -38,7 +38,7 @@ import org.jboss.jandex.ClassInfo;
 public class BasicMocker extends PropertyMocker {
 	private final JaxbBasic basic;
 
-	BasicMocker(IndexBuilder indexBuilder, ClassInfo classInfo, EntityMappingsMocker.Default defaults, JaxbBasic basic) {
+	BasicMocker(IndexBuilder indexBuilder, ClassInfo classInfo, Default defaults, JaxbBasic basic) {
 		super( indexBuilder, classInfo, defaults );
 		this.basic = basic;
 	}

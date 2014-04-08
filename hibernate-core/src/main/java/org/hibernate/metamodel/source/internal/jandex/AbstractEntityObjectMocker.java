@@ -51,7 +51,7 @@ public abstract class AbstractEntityObjectMocker extends AnnotationMocker {
 	protected AbstractAttributesBuilder attributesBuilder;
 	protected ClassInfo classInfo;
 
-	AbstractEntityObjectMocker(IndexBuilder indexBuilder, EntityMappingsMocker.Default defaults) {
+	AbstractEntityObjectMocker(IndexBuilder indexBuilder, Default defaults) {
 		super( indexBuilder, defaults );
 	}
 

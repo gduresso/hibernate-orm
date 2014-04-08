@@ -34,7 +34,7 @@ import org.jboss.jandex.ClassInfo;
 public class EmbeddedMocker extends PropertyMocker {
 	private final JaxbEmbedded embedded;
 
-	EmbeddedMocker(IndexBuilder indexBuilder, ClassInfo classInfo, EntityMappingsMocker.Default defaults, JaxbEmbedded embedded) {
+	EmbeddedMocker(IndexBuilder indexBuilder, ClassInfo classInfo, Default defaults, JaxbEmbedded embedded) {
 		super( indexBuilder, classInfo, defaults );
 		this.embedded = embedded;
 	}

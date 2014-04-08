@@ -39,7 +39,7 @@ import org.jboss.jandex.ClassInfo;
 public class OneToOneMocker extends PropertyMocker {
 	private JaxbOneToOne oneToOne;
 
-	OneToOneMocker(IndexBuilder indexBuilder, ClassInfo classInfo, EntityMappingsMocker.Default defaults, JaxbOneToOne oneToOne) {
+	OneToOneMocker(IndexBuilder indexBuilder, ClassInfo classInfo, Default defaults, JaxbOneToOne oneToOne) {
 		super( indexBuilder, classInfo, defaults );
 		this.oneToOne = oneToOne;
 	}

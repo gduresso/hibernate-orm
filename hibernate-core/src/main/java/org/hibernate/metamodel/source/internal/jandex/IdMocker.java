@@ -41,7 +41,7 @@ import org.jboss.jandex.ClassInfo;
 public class IdMocker extends PropertyMocker {
 	private final JaxbId id;
 
-	IdMocker(IndexBuilder indexBuilder, ClassInfo classInfo, EntityMappingsMocker.Default defaults, JaxbId id) {
+	IdMocker(IndexBuilder indexBuilder, ClassInfo classInfo, Default defaults, JaxbId id) {
 		super( indexBuilder, classInfo, defaults );
 		this.id = id;
 	}

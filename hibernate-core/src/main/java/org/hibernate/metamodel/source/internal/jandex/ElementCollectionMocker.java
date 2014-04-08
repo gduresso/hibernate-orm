@@ -38,7 +38,7 @@ import org.jboss.jandex.ClassInfo;
 public class ElementCollectionMocker extends PropertyMocker {
 	private final JaxbElementCollection elementCollection;
 
-	ElementCollectionMocker(IndexBuilder indexBuilder, ClassInfo classInfo, EntityMappingsMocker.Default defaults, JaxbElementCollection elementCollection) {
+	ElementCollectionMocker(IndexBuilder indexBuilder, ClassInfo classInfo, Default defaults, JaxbElementCollection elementCollection) {
 		super( indexBuilder, classInfo, defaults );
 		this.elementCollection = elementCollection;
 	}

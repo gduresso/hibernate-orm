@@ -62,7 +62,7 @@ import org.jboss.jandex.DotName;
 public class EntityMocker extends AbstractEntityObjectMocker {
 	private final JaxbEntity entity;
 
-	public EntityMocker(IndexBuilder indexBuilder, JaxbEntity entity, EntityMappingsMocker.Default defaults) {
+	public EntityMocker(IndexBuilder indexBuilder, JaxbEntity entity, Default defaults) {
 		super( indexBuilder, defaults );
 		this.entity = entity;
 	}

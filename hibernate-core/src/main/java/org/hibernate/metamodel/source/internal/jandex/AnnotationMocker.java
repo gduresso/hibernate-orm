@@ -55,16 +55,16 @@ import org.jboss.jandex.DotName;
  * @author Strong Liu
  */
 public abstract class AnnotationMocker extends AbstractMocker {
-	private EntityMappingsMocker.Default defaults;
+	private Default defaults;
 
-	AnnotationMocker(IndexBuilder indexBuilder, EntityMappingsMocker.Default defaults) {
+	AnnotationMocker(IndexBuilder indexBuilder, Default defaults) {
 		super( indexBuilder );
 		this.defaults = defaults;
 	}
 
 	abstract void process();
 
-	protected EntityMappingsMocker.Default getDefaults() {
+	protected Default getDefaults() {
 		return defaults;
 	}
 

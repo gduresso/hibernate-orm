@@ -23,7 +23,6 @@
  */
 package org.hibernate.metamodel.source.internal.jandex;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -196,87 +195,5 @@ public class EntityMappingsMocker {
 		defaults.override( globalDefaults );
 		defaults.override( entityMappingDefault );
 		return defaults;
-	}
-
-
-	public static class Default implements Serializable {
-		private AccessType access;
-		private String packageName;
-		private String schema;
-		private String catalog;
-		private Boolean metadataComplete;
-		private Boolean cascadePersist;
-
-		public AccessType getAccess() {
-			return access;
-		}
-
-		public void setAccess(AccessType access) {
-			this.access = access;
-		}
-
-		public String getCatalog() {
-			return catalog;
-		}
-
-		public void setCatalog(String catalog) {
-			this.catalog = catalog;
-		}
-
-		public String getPackageName() {
-			return packageName;
-		}
-
-		public void setPackageName(String packageName) {
-			this.packageName = packageName;
-		}
-
-		public String getSchema() {
-			return schema;
-		}
-
-		public void setSchema(String schema) {
-			this.schema = schema;
-		}
-
-		public Boolean isMetadataComplete() {
-			return metadataComplete;
-		}
-
-		public void setMetadataComplete(Boolean metadataComplete) {
-			this.metadataComplete = metadataComplete;
-		}
-
-		public Boolean isCascadePersist() {
-			return cascadePersist;
-		}
-
-		public void setCascadePersist(Boolean cascadePersist) {
-			this.cascadePersist = cascadePersist;
-		}
-
-		void override(Default globalDefault) {
-			if ( globalDefault != null ) {
-				if ( globalDefault.getAccess() != null ) {
-					access = globalDefault.getAccess();
-				}
-				if ( globalDefault.getPackageName() != null ) {
-					packageName = globalDefault.getPackageName();
-				}
-				if ( globalDefault.getSchema() != null ) {
-					schema = globalDefault.getSchema();
-				}
-				if ( globalDefault.getCatalog() != null ) {
-					catalog = globalDefault.getCatalog();
-				}
-				if ( globalDefault.isCascadePersist() != null ) {
-					cascadePersist = globalDefault.isCascadePersist();
-				}
-				if ( globalDefault.isMetadataComplete() != null ) {
-					metadataComplete = globalDefault.isMetadataComplete();
-				}
-
-			}
-		}
 	}
 }

@@ -44,7 +44,7 @@ public class AttributesBuilder extends AbstractAttributesBuilder {
 			IndexBuilder indexBuilder,
 			ClassInfo classInfo,
 			AccessType accessType,
-			EntityMappingsMocker.Default defaults,
+			Default defaults,
 			JaxbAttributes attributes) {
 		super( indexBuilder, classInfo, defaults );
 		this.attributes = attributes;

@@ -51,10 +51,10 @@ import org.jboss.jandex.ClassInfo;
 public abstract class AbstractAttributesBuilder {
 
 	private ClassInfo classInfo;
-	private EntityMappingsMocker.Default defaults;
+	private Default defaults;
 	private IndexBuilder indexBuilder;
 
-	AbstractAttributesBuilder(IndexBuilder indexBuilder, ClassInfo classInfo, EntityMappingsMocker.Default defaults) {
+	AbstractAttributesBuilder(IndexBuilder indexBuilder, ClassInfo classInfo, Default defaults) {
 		this.indexBuilder = indexBuilder;
 		this.classInfo = classInfo;
 		this.defaults = defaults;

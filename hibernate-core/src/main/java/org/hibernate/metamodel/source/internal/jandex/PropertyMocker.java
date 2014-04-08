@@ -50,7 +50,7 @@ public abstract class PropertyMocker extends AnnotationMocker {
 	protected ClassInfo classInfo;
 	private AnnotationTarget target;
 
-	PropertyMocker(IndexBuilder indexBuilder, ClassInfo classInfo, EntityMappingsMocker.Default defaults) {
+	PropertyMocker(IndexBuilder indexBuilder, ClassInfo classInfo, Default defaults) {
 		super( indexBuilder, defaults );
 		this.classInfo = classInfo;
 	}

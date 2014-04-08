@@ -38,7 +38,7 @@ import org.jboss.jandex.ClassInfo;
 public class ManyToOneMocker extends PropertyMocker {
 	private final JaxbManyToOne manyToOne;
 
-	ManyToOneMocker(IndexBuilder indexBuilder, ClassInfo classInfo, EntityMappingsMocker.Default defaults, JaxbManyToOne manyToOne) {
+	ManyToOneMocker(IndexBuilder indexBuilder, ClassInfo classInfo, Default defaults, JaxbManyToOne manyToOne) {
 		super( indexBuilder, classInfo, defaults );
 		this.manyToOne = manyToOne;
 	}

@@ -37,7 +37,7 @@ public class TransientMocker extends PropertyMocker {
 	private final JaxbTransient transientObj;
 	private final PersistentAttribute wrapper;
 
-	TransientMocker(IndexBuilder indexBuilder, ClassInfo classInfo, EntityMappingsMocker.Default defaults, final JaxbTransient transientObj) {
+	TransientMocker(IndexBuilder indexBuilder, ClassInfo classInfo, Default defaults, final JaxbTransient transientObj) {
 		super( indexBuilder, classInfo, defaults );
 		this.transientObj = transientObj;
 		this.wrapper = new PersistentAttribute() {
