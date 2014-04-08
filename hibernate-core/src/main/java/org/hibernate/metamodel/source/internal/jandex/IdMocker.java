@@ -52,7 +52,7 @@ public class IdMocker extends PropertyMocker {
 	}
 
 	@Override
-	protected void processExtra() {
+	protected void doProcess() {
 		create( ID );
 		parseColumn( id.getColumn(), getTarget() );
 		parseGeneratedValue( id.getGeneratedValue(), getTarget() );

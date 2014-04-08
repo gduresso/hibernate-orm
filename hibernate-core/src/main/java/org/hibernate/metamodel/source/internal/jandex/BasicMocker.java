@@ -49,7 +49,7 @@ public class BasicMocker extends PropertyMocker {
 	}
 
 	@Override
-	protected void processExtra() {
+	protected void doProcess() {
 		List<AnnotationValue> annotationValueList = new ArrayList<AnnotationValue>();
 		MockHelper.booleanValue( "optional", basic.isOptional(), annotationValueList );
 		MockHelper.enumValue( "fetch", FETCH_TYPE, basic.getFetch(), annotationValueList );

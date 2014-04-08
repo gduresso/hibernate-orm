@@ -49,7 +49,7 @@ public class OneToManyMocker extends PropertyMocker {
 	}
 
 	@Override
-	protected void processExtra() {
+	protected void doProcess() {
 		List<AnnotationValue> annotationValueList = new ArrayList<AnnotationValue>();
 		MockHelper.classValue(
 				"targetEntity", MockHelper.buildSafeClassName( oneToMany.getTargetEntity(), getDefaults().getPackageName() ), annotationValueList, indexBuilder.getServiceRegistry()

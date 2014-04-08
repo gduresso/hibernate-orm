@@ -45,7 +45,7 @@ public class VersionMocker extends PropertyMocker {
 	}
 
 	@Override
-	protected void processExtra() {
+	protected void doProcess() {
 		create( VERSION );
 		parseColumn( version.getColumn(), getTarget() );
 		parseTemporalType( version.getTemporal(), getTarget() );

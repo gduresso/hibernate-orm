@@ -45,7 +45,7 @@ public class EmbeddedIdMocker extends PropertyMocker {
 	}
 
 	@Override
-	protected void processExtra() {
+	protected void doProcess() {
 		create( EMBEDDED_ID );
 	}
 }

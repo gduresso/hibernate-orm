@@ -68,7 +68,7 @@ public class TransientMocker extends PropertyMocker {
 	}
 
 	@Override
-	protected void processExtra() {
+	protected void doProcess() {
 		create( TRANSIENT );
 	}
 

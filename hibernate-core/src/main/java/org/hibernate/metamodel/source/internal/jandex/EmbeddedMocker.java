@@ -40,7 +40,7 @@ public class EmbeddedMocker extends PropertyMocker {
 	}
 
 	@Override
-	protected void processExtra() {
+	protected void doProcess() {
 		create( EMBEDDED );
 		parseAttributeOverrides( embedded.getAttributeOverride(), getTarget() );
 		parseAssociationOverrides( embedded.getAssociationOverride(), getTarget() );

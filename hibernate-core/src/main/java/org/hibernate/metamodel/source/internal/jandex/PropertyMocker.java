@@ -56,7 +56,7 @@ public abstract class PropertyMocker extends AnnotationMocker {
 	}
 
 	protected abstract PersistentAttribute getPersistentAttribute();
-	protected abstract void processExtra();
+	protected abstract void doProcess();
 
 	@Override
 	protected DotName getTargetName() {
@@ -139,7 +139,7 @@ public abstract class PropertyMocker extends AnnotationMocker {
 	@Override
 	final void process() {
 		resolveTarget();
-		processExtra();
+		doProcess();
 	}
 
 	protected AnnotationInstance parseMapKeyColumn(JaxbMapKeyColumn mapKeyColumn, AnnotationTarget target) {
