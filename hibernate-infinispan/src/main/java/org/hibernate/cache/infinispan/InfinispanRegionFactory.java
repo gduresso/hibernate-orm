@@ -1,6 +1,5 @@
 package org.hibernate.cache.infinispan;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -13,6 +12,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import org.hibernate.boot.registry.classloading.spi.ClassLoaderService;
 import org.hibernate.cache.CacheException;
 import org.hibernate.cache.infinispan.collection.CollectionRegionImpl;
 import org.hibernate.cache.infinispan.entity.EntityRegionImpl;
@@ -34,10 +34,11 @@ import org.hibernate.cache.spi.RegionFactory;
 import org.hibernate.cache.spi.TimestampsRegion;
 import org.hibernate.cache.spi.access.AccessType;
 import org.hibernate.cfg.Settings;
+import org.hibernate.engine.spi.SessionFactoryImplementor;
+import org.hibernate.internal.util.ClassLoaderHelper;
 import org.hibernate.internal.util.config.ConfigurationHelper;
 import org.infinispan.AdvancedCache;
 import org.infinispan.commands.module.ModuleCommandFactory;
-import org.infinispan.commons.util.FileLookup;
 import org.infinispan.configuration.cache.CacheMode;
 import org.infinispan.configuration.cache.Configuration;
 import org.infinispan.configuration.cache.ConfigurationBuilder;
@@ -313,11 +314,11 @@ public class InfinispanRegionFactory implements RegionFactory {
 	}
 
 	@Override
-	public void start(Settings settings, Properties properties) throws CacheException {
+	public void start(Settings settings, Properties properties, ClassLoaderService cls) throws CacheException {
 		log.debug( "Starting Infinispan region factory" );
 		try {
 			transactionManagerlookup = createTransactionManagerLookup( settings, properties );
-			manager = createCacheManager( properties );
+			manager = createCacheManager( properties, cls );
 			initGenericDataTypeOverrides();
 			final Enumeration keys = properties.propertyNames();
 			while ( keys.hasMoreElements() ) {
@@ -392,14 +393,15 @@ public class InfinispanRegionFactory implements RegionFactory {
 		return Collections.unmodifiableSet( definedConfigurations );
 	}
 
-	protected EmbeddedCacheManager createCacheManager(Properties properties) throws CacheException {
+	protected EmbeddedCacheManager createCacheManager(Properties properties, ClassLoaderService cls) throws CacheException {
 		try {
 			final String configLoc = ConfigurationHelper.getString(
 					INFINISPAN_CONFIG_RESOURCE_PROP, properties, DEF_INFINISPAN_CONFIG_RESOURCE
 			);
-			final ClassLoader classLoader = this.getClass().getClassLoader();
-			final InputStream is = new FileLookup().lookupFileStrict( configLoc, classLoader );
-			final ParserRegistry parserRegistry = new ParserRegistry( classLoader );
+			final InputStream is = cls.locateResourceStream( configLoc );
+			// TODO: Not sure the use of ClassLoaderHelper here is necessary (it's going away anyway).  But, need to
+			// figure out what CL is used for after the InputStream is already given.
+			final ParserRegistry parserRegistry = new ParserRegistry( ClassLoaderHelper.overridenClassLoader );
 			final ConfigurationBuilderHolder holder = parserRegistry.parse( is );
 
 			// Override global jmx statistics exposure
@@ -411,7 +413,7 @@ public class InfinispanRegionFactory implements RegionFactory {
 
 			return createCacheManager( holder );
 		}
-		catch (IOException e) {
+		catch (Exception e) {
 			throw new CacheException( "Unable to create default cache manager", e );
 		}
 	}

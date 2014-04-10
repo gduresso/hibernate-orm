@@ -22,14 +22,15 @@
 package org.hibernate.cache.infinispan;
 
 import java.util.Properties;
+
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 
+import org.hibernate.boot.registry.classloading.spi.ClassLoaderService;
 import org.hibernate.cache.CacheException;
 import org.hibernate.internal.util.config.ConfigurationHelper;
 import org.hibernate.internal.util.jndi.JndiHelper;
-
 import org.infinispan.manager.EmbeddedCacheManager;
 import org.infinispan.util.logging.Log;
 import org.infinispan.util.logging.LogFactory;
@@ -70,7 +71,8 @@ public class JndiInfinispanRegionFactory extends InfinispanRegionFactory {
 	}
 
 	@Override
-	protected EmbeddedCacheManager createCacheManager(Properties properties) throws CacheException {
+	protected EmbeddedCacheManager createCacheManager(
+			Properties properties, ClassLoaderService cls) throws CacheException {
 		final String name = ConfigurationHelper.getString( CACHE_MANAGER_RESOURCE_PROP, properties, null );
 		if ( name == null ) {
 			throw new CacheException( "Configuration property " + CACHE_MANAGER_RESOURCE_PROP + " not set" );

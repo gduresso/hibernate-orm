@@ -30,6 +30,7 @@ import net.sf.ehcache.CacheManager;
 import net.sf.ehcache.config.Configuration;
 import net.sf.ehcache.config.ConfigurationFactory;
 
+import org.hibernate.boot.registry.classloading.spi.ClassLoaderService;
 import org.hibernate.cache.CacheException;
 import org.hibernate.cache.ehcache.internal.util.HibernateEhcacheUtils;
 import org.hibernate.cfg.Settings;
@@ -69,7 +70,8 @@ public class EhCacheRegionFactory extends AbstractEhcacheRegionFactory {
 	}
 
 	@Override
-	public void start(Settings settings, Properties properties) throws CacheException {
+	public void start(Settings settings, Properties properties, ClassLoaderService cls) throws CacheException {
+		setClassLoaderService( cls );
 		this.settings = settings;
 		if ( manager != null ) {
 			LOG.attemptToRestartAlreadyStartedEhCacheProvider();

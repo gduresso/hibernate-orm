@@ -21,19 +21,19 @@
  */
 package org.hibernate.test.cache.infinispan;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import java.util.Properties;
+
 import javax.transaction.TransactionManager;
 
-import org.hibernate.test.cache.infinispan.functional.SingleNodeTestCase;
-import org.infinispan.AdvancedCache;
-import org.infinispan.configuration.cache.CacheMode;
-import org.infinispan.configuration.cache.Configuration;
-import org.infinispan.configuration.cache.ConfigurationBuilder;
-import org.infinispan.eviction.EvictionStrategy;
-import org.infinispan.manager.DefaultCacheManager;
-import org.infinispan.manager.EmbeddedCacheManager;
-import org.junit.Test;
-
+import org.hibernate.boot.registry.classloading.internal.ClassLoaderServiceImpl;
+import org.hibernate.boot.registry.classloading.spi.ClassLoaderService;
 import org.hibernate.cache.CacheException;
 import org.hibernate.cache.infinispan.InfinispanRegionFactory;
 import org.hibernate.cache.infinispan.collection.CollectionRegionImpl;
@@ -44,14 +44,16 @@ import org.hibernate.cache.infinispan.tm.HibernateTransactionManagerLookup;
 import org.hibernate.cfg.Settings;
 import org.hibernate.engine.transaction.jta.platform.internal.AbstractJtaPlatform;
 import org.hibernate.engine.transaction.jta.platform.internal.JBossStandAloneJtaPlatform;
+import org.hibernate.test.cache.infinispan.functional.SingleNodeTestCase;
 import org.hibernate.testing.ServiceRegistryBuilder;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import org.infinispan.AdvancedCache;
+import org.infinispan.configuration.cache.CacheMode;
+import org.infinispan.configuration.cache.Configuration;
+import org.infinispan.configuration.cache.ConfigurationBuilder;
+import org.infinispan.eviction.EvictionStrategy;
+import org.infinispan.manager.DefaultCacheManager;
+import org.infinispan.manager.EmbeddedCacheManager;
+import org.junit.Test;
 
 /**
  * InfinispanRegionFactoryTestCase.
@@ -299,7 +301,7 @@ public class InfinispanRegionFactoryTestCase  {
       builder.clustering().cacheMode(CacheMode.INVALIDATION_SYNC);
       manager.defineConfiguration("timestamps", builder.build());
       try {
-         factory.start(null, p);
+         factory.start(null, p, new ClassLoaderServiceImpl());
          fail("Should have failed saying that invalidation is not allowed for timestamp caches.");
       } catch(CacheException ce) {
       }
@@ -563,16 +565,17 @@ public class InfinispanRegionFactoryTestCase  {
          }
 
          @Override
-         protected EmbeddedCacheManager createCacheManager(Properties properties) throws CacheException {
+         protected EmbeddedCacheManager createCacheManager(
+        		 Properties properties, ClassLoaderService cls) throws CacheException {
             if (manager != null)
                return manager;
             else
-               return super.createCacheManager(properties);
+               return super.createCacheManager(properties, cls);
          }
 
       };
 
-      factory.start(null, p);
+      factory.start(null, p, new ClassLoaderServiceImpl());
       return factory;
    }
 

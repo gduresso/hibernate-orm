@@ -25,6 +25,7 @@ package org.hibernate.test.cache.infinispan.util;
 
 import java.util.Properties;
 
+import org.hibernate.boot.registry.classloading.spi.ClassLoaderService;
 import org.hibernate.cache.infinispan.InfinispanRegionFactory;
 import org.hibernate.cfg.AvailableSettings;
 import org.hibernate.cfg.Configuration;
@@ -76,7 +77,7 @@ public class CacheTestUtil {
          } else {
             regionFactory = (InfinispanRegionFactory) clazz.newInstance();
          }
-         regionFactory.start(settings, properties);
+         regionFactory.start(settings, properties, reg.getService( ClassLoaderService.class ));
          return regionFactory;
       } catch (Exception e) {
          throw new RuntimeException(e);

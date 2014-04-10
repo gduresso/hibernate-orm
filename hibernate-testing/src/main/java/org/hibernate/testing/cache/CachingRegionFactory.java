@@ -25,6 +25,7 @@ package org.hibernate.testing.cache;
 
 import java.util.Properties;
 
+import org.hibernate.boot.registry.classloading.spi.ClassLoaderService;
 import org.hibernate.cache.CacheException;
 import org.hibernate.cache.spi.CacheDataDescription;
 import org.hibernate.cache.spi.CollectionRegion;
@@ -36,7 +37,6 @@ import org.hibernate.cache.spi.TimestampsRegion;
 import org.hibernate.cache.spi.access.AccessType;
 import org.hibernate.cfg.Settings;
 import org.hibernate.internal.CoreMessageLogger;
-
 import org.jboss.logging.Logger;
 
 /**
@@ -60,7 +60,7 @@ public class CachingRegionFactory implements RegionFactory {
 	}
 
 	@Override
-	public void start(Settings settings, Properties properties) throws CacheException {
+	public void start(Settings settings, Properties properties, ClassLoaderService cls) throws CacheException {
 		this.settings=settings;
 		this.properties=properties; 
 	}

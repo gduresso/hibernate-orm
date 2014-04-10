@@ -31,6 +31,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import org.hibernate.HibernateException;
+import org.hibernate.boot.registry.classloading.spi.ClassLoaderService;
 import org.hibernate.cache.spi.CacheKey;
 import org.hibernate.cache.spi.QueryCache;
 import org.hibernate.cache.spi.Region;
@@ -43,7 +44,6 @@ import org.hibernate.internal.util.collections.CollectionHelper;
 import org.hibernate.persister.collection.CollectionPersister;
 import org.hibernate.persister.entity.EntityPersister;
 import org.hibernate.pretty.MessageHelper;
-
 import org.jboss.logging.Logger;
 
 /**
@@ -67,7 +67,8 @@ public class CacheImpl implements CacheImplementor {
 		this.settings = sessionFactory.getSettings();
 		//todo should get this from service registry
 		this.regionFactory = settings.getRegionFactory();
-		regionFactory.start( settings, sessionFactory.getProperties() );
+		regionFactory.start( settings, sessionFactory.getProperties(),
+				sessionFactory.getServiceRegistry().getService( ClassLoaderService.class ) );
 		if ( settings.isQueryCacheEnabled() ) {
 			updateTimestampsCache = new UpdateTimestampsCache(
 					settings,

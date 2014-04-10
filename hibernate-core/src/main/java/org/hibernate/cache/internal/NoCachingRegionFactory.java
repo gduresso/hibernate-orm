@@ -25,6 +25,7 @@ package org.hibernate.cache.internal;
 
 import java.util.Properties;
 
+import org.hibernate.boot.registry.classloading.spi.ClassLoaderService;
 import org.hibernate.cache.CacheException;
 import org.hibernate.cache.NoCacheRegionFactoryAvailableException;
 import org.hibernate.cache.spi.CacheDataDescription;
@@ -55,7 +56,7 @@ public class NoCachingRegionFactory implements RegionFactory {
 	}
 
 	@Override
-	public void start(Settings settings, Properties properties) throws CacheException {
+	public void start(Settings settings, Properties properties, ClassLoaderService cls) throws CacheException {
 	}
 
 	@Override

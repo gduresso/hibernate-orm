@@ -25,6 +25,7 @@ package org.hibernate.cache.spi;
 
 import java.util.Properties;
 
+import org.hibernate.boot.registry.classloading.spi.ClassLoaderService;
 import org.hibernate.cache.CacheException;
 import org.hibernate.cache.spi.access.AccessType;
 import org.hibernate.cfg.Settings;
@@ -51,12 +52,13 @@ public interface RegionFactory extends Service {
 	 *
 	 * @param settings The settings in effect.
 	 * @param properties The defined cfg properties
+	 * @param cls The ClassLoaderService
 	 *
 	 * @throws org.hibernate.cache.CacheException Indicates problems starting the L2 cache impl;
 	 * considered as a sign to stop {@link org.hibernate.SessionFactory}
 	 * building.
 	 */
-	public void start(Settings settings, Properties properties) throws CacheException;
+	public void start(Settings settings, Properties properties, ClassLoaderService cls) throws CacheException;
 
 	/**
 	 * Lifecycle callback to perform any necessary cleanup of the underlying
