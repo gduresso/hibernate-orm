@@ -2325,7 +2325,7 @@ public abstract class Loader {
 	        final SessionImplementor session,
 	        final QueryParameters queryParameters,
 	        final Set querySpaces,
-	        final Type[] resultTypes) throws HibernateException {
+			final Type[] resultTypes) throws HibernateException {
 
 		final boolean cacheable = factory.getSettings().isQueryCacheEnabled() &&
 			queryParameters.isCacheable();
@@ -2481,7 +2481,7 @@ public abstract class Loader {
 		return factory.getEntityPersister( entityType.getAssociatedEntityName() );
 	}
 
-	private void putResultInQueryCache(
+	protected void putResultInQueryCache(
 			final SessionImplementor session,
 			final QueryParameters queryParameters,
 			final Type[] resultTypes,
@@ -2580,7 +2580,7 @@ public abstract class Loader {
 	 */
 	protected ScrollableResults scroll(
 	        final QueryParameters queryParameters,
-	        final Type[] returnTypes,
+			final Type[] returnTypes,
 	        final HolderInstantiator holderInstantiator,
 	        final SessionImplementor session) throws HibernateException {
 
