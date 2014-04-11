@@ -132,7 +132,7 @@ public class EntityMappingsMocker {
 			globalDefaults.setCatalog( pud.getCatalog() );
 			//globalDefaults.setAccess( pud.getAccess() );
 			globalDefaults.setCascadePersist( pud.getCascadePersist() != null );
-			new PersistenceMetadataMocker( indexBuilder, pud ).process();
+			new PersistenceMetadataMocker( indexBuilder, pud, globalDefaults ).process();
 		}
 	}
 
@@ -170,9 +170,7 @@ public class EntityMappingsMocker {
 	private void processGlobalAnnotations() {
 		if ( globalAnnotations.hasGlobalConfiguration() ) {
 			indexBuilder.collectGlobalConfigurationFromIndex( globalAnnotations );
-			new GlobalAnnotationMocker(
-					indexBuilder, globalAnnotations
-			).process();
+			new GlobalAnnotationMocker( indexBuilder, globalAnnotations, globalDefaults	).process();
 		}
 	}
 

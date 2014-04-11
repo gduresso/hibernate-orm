@@ -55,6 +55,7 @@ public class ElementCollectionMocker extends PropertyMocker {
 				"targetClass",
 				elementCollection.getTargetClass(),
 				annotationValueList,
+				getDefaults(),
 				indexBuilder.getServiceRegistry()
 		);
 		MockHelper.enumValue( "fetch", FETCH_TYPE, elementCollection.getFetch(), annotationValueList );

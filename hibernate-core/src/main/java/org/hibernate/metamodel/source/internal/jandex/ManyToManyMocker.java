@@ -51,9 +51,8 @@ public class ManyToManyMocker extends PropertyMocker {
 	@Override
 	protected void doProcess() {
 		List<AnnotationValue> annotationValueList = new ArrayList<AnnotationValue>();
-		MockHelper.classValue(
-				"targetEntity", manyToMany.getTargetEntity(), annotationValueList, indexBuilder.getServiceRegistry()
-		);
+		MockHelper.classValue( "targetEntity", manyToMany.getTargetEntity(), annotationValueList, getDefaults(),
+				indexBuilder.getServiceRegistry() );
 		MockHelper.enumValue( "fetch", FETCH_TYPE, manyToMany.getFetch(), annotationValueList );
 		MockHelper.stringValue( "mappedBy", manyToMany.getMappedBy(), annotationValueList );
 		MockHelper.cascadeValue( "cascade", manyToMany.getCascade(), isDefaultCascadePersist(), annotationValueList );

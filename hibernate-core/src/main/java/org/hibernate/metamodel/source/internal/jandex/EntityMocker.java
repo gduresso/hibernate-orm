@@ -68,7 +68,7 @@ public class EntityMocker extends AbstractEntityObjectMocker {
 	}
 
 	@Override
-	protected void processExtra() {
+	protected void doProcess() {
 		//@Entity
 		create( ENTITY, MockHelper.stringValueArray( "name", entity.getName() ) );
 

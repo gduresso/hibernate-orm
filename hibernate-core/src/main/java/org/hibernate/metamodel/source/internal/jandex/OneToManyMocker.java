@@ -51,9 +51,8 @@ public class OneToManyMocker extends PropertyMocker {
 	@Override
 	protected void doProcess() {
 		List<AnnotationValue> annotationValueList = new ArrayList<AnnotationValue>();
-		MockHelper.classValue(
-				"targetEntity", MockHelper.buildSafeClassName( oneToMany.getTargetEntity(), getDefaults().getPackageName() ), annotationValueList, indexBuilder.getServiceRegistry()
-		);
+		MockHelper.classValue( "targetEntity", oneToMany.getTargetEntity(), annotationValueList, getDefaults(),
+				indexBuilder.getServiceRegistry() );
 		MockHelper.enumValue( "fetch", FETCH_TYPE, oneToMany.getFetch(), annotationValueList );
 		MockHelper.stringValue( "mappedBy", oneToMany.getMappedBy(), annotationValueList );
 		MockHelper.booleanValue( "orphanRemoval", oneToMany.isOrphanRemoval(), annotationValueList );

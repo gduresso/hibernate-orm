@@ -47,8 +47,8 @@ import org.jboss.jandex.AnnotationValue;
 public class GlobalAnnotationMocker extends AbstractMocker {
 	private GlobalAnnotations globalAnnotations;
 
-	GlobalAnnotationMocker(IndexBuilder indexBuilder, GlobalAnnotations globalAnnotations) {
-		super( indexBuilder );
+	GlobalAnnotationMocker(IndexBuilder indexBuilder, GlobalAnnotations globalAnnotations, Default defaults) {
+		super( indexBuilder, defaults );
 		this.globalAnnotations = globalAnnotations;
 	}
 
@@ -111,9 +111,8 @@ public class GlobalAnnotationMocker extends AbstractMocker {
 				"discriminatorColumn", result.getDiscriminatorColumn(), annotationValueList
 		);
 		nestedFieldResultList( "fields", result.getFieldResult(), annotationValueList );
-		MockHelper.classValue(
-				"entityClass", result.getEntityClass(), annotationValueList, indexBuilder.getServiceRegistry()
-		);
+		MockHelper.classValue( "entityClass", result.getEntityClass(), annotationValueList, getDefaults(),
+				indexBuilder.getServiceRegistry() );
 		return
 				create(
 						ENTITY_RESULT, null, annotationValueList
@@ -233,7 +232,7 @@ public class GlobalAnnotationMocker extends AbstractMocker {
 						MockHelper.convert( namedQuery.getCacheMode() ), annotationValueList );
 				MockHelper.enumValue( "flushMode", HibernateDotNames.FLUSH_MODE_TYPE,
 						MockHelper.convert( namedQuery.getFlushMode() ), annotationValueList );
-				MockHelper.classValue( "resultClass", namedQuery.getResultClass(), annotationValueList,
+				MockHelper.classValue( "resultClass", namedQuery.getResultClass(), annotationValueList, getDefaults(),
 						indexBuilder.getServiceRegistry() );
 				
 				AnnotationInstance annotationInstance = create(

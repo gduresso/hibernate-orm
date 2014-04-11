@@ -55,7 +55,7 @@ public class MappedSuperclassMocker extends AbstractEntityObjectMocker {
 	}
 
 	@Override
-	protected void processExtra() {
+	protected void doProcess() {
 		create( MAPPED_SUPERCLASS );
 	}
 

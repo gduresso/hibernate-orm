@@ -25,6 +25,7 @@ package org.hibernate.metamodel.source.internal.jandex;
 
 import java.util.ArrayList;
 import java.util.List;
+
 import javax.persistence.AccessType;
 import javax.persistence.EnumType;
 import javax.persistence.TemporalType;
@@ -36,7 +37,6 @@ import org.hibernate.metamodel.source.internal.jaxb.JaxbMapKeyClass;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbMapKeyColumn;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbMapKeyJoinColumn;
 import org.hibernate.metamodel.source.internal.jaxb.PersistentAttribute;
-
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationTarget;
 import org.jboss.jandex.AnnotationValue;
@@ -164,11 +164,8 @@ public abstract class PropertyMocker extends AnnotationMocker {
 		if ( mapKeyClass == null ) {
 			return null;
 		}
-		return create(
-				MAP_KEY_CLASS, target, MockHelper.classValueArray(
-				"value", mapKeyClass.getClazz(), indexBuilder.getServiceRegistry()
-		)
-		);
+		return create( MAP_KEY_CLASS, target, MockHelper.classValueArray( "value", mapKeyClass.getClazz(),
+				getDefaults(), indexBuilder.getServiceRegistry() ) );
 	}
 
 	protected AnnotationInstance parseMapKeyTemporal(TemporalType temporalType, AnnotationTarget target) {

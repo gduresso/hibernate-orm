@@ -65,7 +65,7 @@ public class EmbeddableMocker extends AbstractEntityObjectMocker {
 	}
 
 	@Override
-	protected void processExtra() {
+	protected void doProcess() {
 		create( EMBEDDABLE );
 	}
 

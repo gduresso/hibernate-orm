@@ -670,8 +670,8 @@ public class HbmXmlTransformer {
 
 			final JaxbEmbeddable embeddable = new JaxbEmbeddable();
 			embeddable.setClazz( hbmCompositeId.getClazz() );
+			embeddable.setAttributes( new JaxbEmbeddableAttributes() );
 			for ( Object hbmCompositeAttribute : hbmCompositeId.getKeyPropertyOrKeyManyToOne() ) {
-				embeddable.setAttributes( new JaxbEmbeddableAttributes() );
 				if ( JaxbKeyPropertyElement.class.isInstance( hbmCompositeAttribute ) ) {
 					final JaxbKeyPropertyElement keyProp = (JaxbKeyPropertyElement) hbmCompositeAttribute;
 					final JaxbBasic basic = new JaxbBasic();

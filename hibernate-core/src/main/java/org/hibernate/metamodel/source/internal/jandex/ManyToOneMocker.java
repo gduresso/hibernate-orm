@@ -51,9 +51,8 @@ public class ManyToOneMocker extends PropertyMocker {
 	@Override
 	protected void doProcess() {
 		List<AnnotationValue> annotationValueList = new ArrayList<AnnotationValue>();
-		MockHelper.classValue(
-				"targetEntity", manyToOne.getTargetEntity(), annotationValueList, indexBuilder.getServiceRegistry()
-		);
+		MockHelper.classValue( "targetEntity", manyToOne.getTargetEntity(), annotationValueList, getDefaults(),
+				indexBuilder.getServiceRegistry() );
 		MockHelper.enumValue( "fetch", FETCH_TYPE, manyToOne.getFetch(), annotationValueList );
 		MockHelper.booleanValue( "optional", manyToOne.isOptional(), annotationValueList );
 		MockHelper.cascadeValue( "cascade", manyToOne.getCascade(), isDefaultCascadePersist(), annotationValueList );
