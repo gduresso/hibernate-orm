@@ -2057,16 +2057,7 @@ public abstract class Loader {
 
 	protected void autoDiscoverTypes(ResultSet rs) {
 		throw new AssertionFailure("Auto discover types not supported in this loader");
-	}
-	
-	/**
-	 * Return types must be retrieved on-demand, rather than, as an example, provided as an argument on the original
-	 * #list call.  They can be overriden later by {@link #autoDiscoverTypes(ResultSet)}, etc.
-	 * 
-	 * @return Type[]
-	 */
-	protected Type[] getReturnTypes() {
-		return new Type[0];
+
 	}
 
 	private synchronized ResultSet wrapResultSetIfEnabled(final ResultSet rs, final SessionImplementor session) {
@@ -2333,13 +2324,14 @@ public abstract class Loader {
 	protected List list(
 	        final SessionImplementor session,
 	        final QueryParameters queryParameters,
-	        final Set querySpaces) throws HibernateException {
+	        final Set querySpaces,
+			final Type[] resultTypes) throws HibernateException {
 
 		final boolean cacheable = factory.getSettings().isQueryCacheEnabled() &&
 			queryParameters.isCacheable();
 
 		if ( cacheable ) {
-			return listUsingQueryCache( session, queryParameters, querySpaces );
+			return listUsingQueryCache( session, queryParameters, querySpaces, resultTypes );
 		}
 		else {
 			return listIgnoreQueryCache( session, queryParameters );
@@ -2353,7 +2345,8 @@ public abstract class Loader {
 	private List listUsingQueryCache(
 			final SessionImplementor session,
 			final QueryParameters queryParameters,
-			final Set querySpaces) {
+			final Set querySpaces,
+			final Type[] resultTypes) {
 
 		QueryCache queryCache = factory.getQueryCache( queryParameters.getCacheRegion() );
 
@@ -2369,6 +2362,7 @@ public abstract class Loader {
 				session,
 				queryParameters,
 				querySpaces,
+				resultTypes,
 				queryCache,
 				key
 			);
@@ -2379,6 +2373,7 @@ public abstract class Loader {
 			putResultInQueryCache(
 					session,
 					queryParameters,
+					resultTypes,
 					queryCache,
 					key,
 					result
@@ -2428,17 +2423,17 @@ public abstract class Loader {
 			final SessionImplementor session,
 			final QueryParameters queryParameters,
 			final Set querySpaces,
+			final Type[] resultTypes,
 			final QueryCache queryCache,
 			final QueryKey key) {
 		List result = null;
-		final Type[] returnTypes = getReturnTypes();
-		
+
 		if ( session.getCacheMode().isGetEnabled() ) {
 			boolean isImmutableNaturalKeyLookup =
 					queryParameters.isNaturalKeyLookup() &&
-							returnTypes.length == 1 &&
-							returnTypes[0].isEntityType() &&
-							getEntityPersister( EntityType.class.cast( returnTypes[0] ) )
+							resultTypes.length == 1 &&
+							resultTypes[0].isEntityType() &&
+							getEntityPersister( EntityType.class.cast( resultTypes[0] ) )
 									.getEntityMetamodel()
 									.hasImmutableNaturalId();
 
@@ -2457,7 +2452,7 @@ public abstract class Loader {
 			try {
 				result = queryCache.get(
 						key,
-						key.getResultTransformer().getCachedResultTypes( returnTypes ),
+						key.getResultTransformer().getCachedResultTypes( resultTypes ),
 						isImmutableNaturalKeyLookup,
 						querySpaces,
 						session
@@ -2486,16 +2481,17 @@ public abstract class Loader {
 		return factory.getEntityPersister( entityType.getAssociatedEntityName() );
 	}
 
-	private void putResultInQueryCache(
+	protected void putResultInQueryCache(
 			final SessionImplementor session,
 			final QueryParameters queryParameters,
+			final Type[] resultTypes,
 			final QueryCache queryCache,
 			final QueryKey key,
 			final List result) {
 		if ( session.getCacheMode().isPutEnabled() ) {
 			boolean put = queryCache.put(
 					key,
-					key.getResultTransformer().getCachedResultTypes( getReturnTypes() ),
+					key.getResultTransformer().getCachedResultTypes( resultTypes ),
 					result,
 					queryParameters.isNaturalKeyLookup(),
 					session
@@ -2584,6 +2580,7 @@ public abstract class Loader {
 	 */
 	protected ScrollableResults scroll(
 	        final QueryParameters queryParameters,
+			final Type[] returnTypes,
 	        final HolderInstantiator holderInstantiator,
 	        final SessionImplementor session) throws HibernateException {
 
@@ -2616,7 +2613,7 @@ public abstract class Loader {
 						session,
 						this,
 						queryParameters,
-						getReturnTypes(),
+						returnTypes,
 						holderInstantiator
 					);
 			}
@@ -2627,7 +2624,7 @@ public abstract class Loader {
 						session,
 						this,
 						queryParameters,
-						getReturnTypes(),
+						returnTypes,
 						holderInstantiator
 					);
 			}
