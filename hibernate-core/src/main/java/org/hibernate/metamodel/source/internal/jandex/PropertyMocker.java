@@ -97,6 +97,7 @@ public abstract class PropertyMocker extends AnnotationMocker {
 		}
 		else {
 			// attribute in orm.xml did define access
+			getPersistentAttribute().setAccess( xmlDefinedAccessType );
 			List<AnnotationValue> accessTypeValueList = new ArrayList<AnnotationValue>();
 			MockHelper.enumValue( "value", ACCESS_TYPE, xmlDefinedAccessType, accessTypeValueList );
 			create( ACCESS, accessTypeValueList );

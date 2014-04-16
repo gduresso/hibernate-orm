@@ -823,7 +823,7 @@ public class HbmXmlTransformer {
 	private JaxbBasic transferBasicAttribute(JaxbPropertyElement hbmProp) {
 		final JaxbBasic basic = new JaxbBasic();
 		basic.setName( hbmProp.getName() );
-		basic.setOptional( hbmProp.isNotNull() != null && !hbmProp.isNotNull() );
+		basic.setOptional( hbmProp.isNotNull() == null ? true : !hbmProp.isNotNull() );
 		basic.setFetch( FetchType.EAGER );
 		basic.setAttributeAccessor( hbmProp.getAccess() );
 		basic.setOptimisticLock( hbmProp.isOptimisticLock() );
@@ -844,6 +844,8 @@ public class HbmXmlTransformer {
 				}
 			}
 		}
+		
+		// TODO: If hbmProp isUnique or notNull is set, bind the column?
 
 		if ( StringHelper.isNotEmpty( hbmProp.getFormulaAttribute() ) ) {
 			basic.getColumnOrFormula().add( hbmProp.getFormulaAttribute() );
