@@ -30,17 +30,20 @@ import javax.xml.bind.JAXBElement;
 
 import org.hibernate.FlushMode;
 import org.hibernate.internal.util.StringHelper;
+import org.hibernate.metamodel.source.internal.jandex.MockHelper;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbAny;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbAttributes;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbBasic;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbCacheElement;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbCacheModeType;
+import org.hibernate.metamodel.source.internal.jaxb.JaxbCascadeType;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbColumn;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbDiscriminatorColumn;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbEmbeddable;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbEmbeddableAttributes;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbEmbedded;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbEmbeddedId;
+import org.hibernate.metamodel.source.internal.jaxb.JaxbEmptyType;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbEntity;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbEntityMappings;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbForeignKey;
@@ -59,10 +62,12 @@ import org.hibernate.metamodel.source.internal.jaxb.JaxbHbmTypeDef;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbId;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbIdClass;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbJoinColumn;
+import org.hibernate.metamodel.source.internal.jaxb.JaxbJoinTable;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbManyToOne;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbNamedNativeQuery;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbNamedQuery;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbNaturalId;
+import org.hibernate.metamodel.source.internal.jaxb.JaxbOneToOne;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbPersistenceUnitMetadata;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbQueryParamType;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbSynchronizeType;
@@ -872,25 +877,90 @@ public class HbmXmlTransformer {
 	}
 
 	private void transferEmbeddedAttributes(JaxbEntity entity, JaxbClassElement hbmClass) {
-
+		for (JaxbComponentElement hbmComponent : hbmClass.getComponent()) {
+			entity.getAttributes().getEmbedded().add( transferEmbeddedAttribute( hbmComponent ) );
+			ormRoot.getEmbeddable().add( transferEmbeddable( hbmComponent ) );
+		}
+	}
+	
+	private JaxbEmbeddable transferEmbeddable(JaxbComponentElement hbmComponent) {
+		final JaxbEmbeddable embeddable = new JaxbEmbeddable();
+		embeddable.setClazz( hbmComponent.getClazz() );
+		embeddable.setAttributes( new JaxbEmbeddableAttributes() );
+		for (JaxbPropertyElement property : hbmComponent.getProperty()) {
+			embeddable.getAttributes().getBasic().add( transferBasicAttribute( property ) );
+		}
+		for (JaxbManyToOneElement manyToOne : hbmComponent.getManyToOne()) {
+			embeddable.getAttributes().getManyToOne().add( transferManyToOneAttribute( manyToOne ) );
+		}
+		for (JaxbOneToOneElement oneToOne : hbmComponent.getOneToOne()) {
+			embeddable.getAttributes().getOneToOne().add( transferOneToOneAttribute( oneToOne ) );
+		}
+		for (JaxbComponentElement component : hbmComponent.getComponent()) {
+			// TODO
+		}
+		return embeddable;
 	}
 
 	private JaxbEmbedded transferEmbeddedAttribute(JaxbComponentElement hbmComponent) {
-		// TODO
-		return new JaxbEmbedded();
+		final JaxbEmbedded embedded = new JaxbEmbedded();
+		embedded.setAttributeAccessor( hbmComponent.getAccess() );
+		embedded.setName( hbmComponent.getName() );
+		return embedded;
 	}
 
 	private void transferOneToOneAttributes(JaxbEntity entity, JaxbClassElement hbmClass) {
+		for (JaxbOneToOneElement hbmO2O : hbmClass.getOneToOne()) {
+			entity.getAttributes().getOneToOne().add( transferOneToOneAttribute( hbmO2O ) );
+		}
+	}
 
+	private JaxbOneToOne transferOneToOneAttribute(JaxbOneToOneElement hbmO2O) {
+		final JaxbOneToOne o2o = new JaxbOneToOne();
+		o2o.setAttributeAccessor( hbmO2O.getAccess() );
+		o2o.setCascade( convertCascadeType( hbmO2O.getCascade() ) );
+		o2o.setFetch( convert( hbmO2O.getFetch() ) );
+		o2o.setForeignKey( new JaxbForeignKey() );
+		o2o.getForeignKey().setName( hbmO2O.getForeignKey() );
+		if (! StringHelper.isEmpty( hbmO2O.getPropertyRef() )) {
+			final JaxbJoinColumn joinColumn = new JaxbJoinColumn();
+			joinColumn.setReferencedColumnName( hbmO2O.getPropertyRef() );
+			o2o.getJoinColumn().add( joinColumn );
+		}
+		o2o.setName( hbmO2O.getName() );
+		o2o.setTargetEntity( hbmO2O.getEntityName() );
+		return o2o;
 	}
 
 	private void transferManyToOneAttributes(JaxbEntity entity, JaxbClassElement hbmClass) {
-
+		for (JaxbManyToOneElement hbmM2O : hbmClass.getManyToOne()) {
+			entity.getAttributes().getManyToOne().add( transferManyToOneAttribute( hbmM2O ) );
+		}
 	}
 
 	private JaxbManyToOne transferManyToOneAttribute(JaxbManyToOneElement hbmM2O) {
-		// TODO
-		return new JaxbManyToOne();
+		final JaxbManyToOne m2o = new JaxbManyToOne();
+		m2o.setAttributeAccessor( hbmM2O.getAccess() );
+		m2o.setCascade( convertCascadeType( hbmM2O.getCascade() ) );
+		m2o.setFetch( convert( hbmM2O.getFetch() ) );
+		m2o.setForeignKey( new JaxbForeignKey() );
+		m2o.getForeignKey().setName( hbmM2O.getForeignKey() );
+		final JaxbJoinColumn joinColumn = new JaxbJoinColumn();
+		if (StringHelper.isEmpty( hbmM2O.getColumnAttribute() )) {
+			// AbstractBasicBindingTests seems to imply this was the case
+			joinColumn.setName( hbmM2O.getName() );
+		}
+		else {
+			joinColumn.setName( hbmM2O.getColumnAttribute() );
+		}
+		if (! StringHelper.isEmpty( hbmM2O.getPropertyRef() )) {
+			joinColumn.setReferencedColumnName( hbmM2O.getPropertyRef() );
+		}
+		m2o.getJoinColumn().add( joinColumn );
+		m2o.setName( hbmM2O.getName() );
+		m2o.setOptional( hbmM2O.isNotNull() == null ? true : !hbmM2O.isNotNull() );
+		m2o.setTargetEntity( hbmM2O.getEntityName() );
+		return m2o;
 	}
 
 	private void transferManyToManyAttributes(JaxbEntity entity, JaxbClassElement hbmClass) {
@@ -945,5 +1015,53 @@ public class HbmXmlTransformer {
 	private void transferUnionSubclass(JaxbUnionSubclassElement hbmSubclass, JaxbEntity entity) {
 		// todo : implement
 	}
-
+	
+	private JaxbCascadeType convertCascadeType(String s) {
+		final JaxbCascadeType cascadeType = new JaxbCascadeType();
+		
+		if (! StringHelper.isEmpty( s )) {
+			s = s.replaceAll( " ", "" );
+			final String[] split = s.split( "," );
+			for (String hbmCascade : split) {
+				if (hbmCascade.equalsIgnoreCase( "all" )) {
+					cascadeType.setCascadeAll( new JaxbEmptyType() );
+				}
+				else if (hbmCascade.equalsIgnoreCase( "persist" )) {
+					cascadeType.setCascadePersist( new JaxbEmptyType() );
+				}
+				else if (hbmCascade.equalsIgnoreCase( "merge" )) {
+					cascadeType.setCascadeMerge( new JaxbEmptyType() );
+				}
+				else if (hbmCascade.equalsIgnoreCase( "refresh" )) {
+					cascadeType.setCascadeRefresh( new JaxbEmptyType() );
+				}
+				else if (hbmCascade.equalsIgnoreCase( "save-update" )) {
+					// TODO
+				}
+				else if (hbmCascade.equalsIgnoreCase( "evict" )) {
+					// TODO
+				}
+				else if (hbmCascade.equalsIgnoreCase( "replicate" )) {
+					// TODO
+				}
+				else if (hbmCascade.equalsIgnoreCase( "lock" )) {
+					// TODO
+				}
+			}
+		}
+		return cascadeType;
+	}
+	
+	private FetchType convert(JaxbFetchStyleAttribute hbmFetch) {
+		if (hbmFetch != null) {
+			switch (hbmFetch) {
+				case JOIN:
+					return FetchType.EAGER;
+				case SELECT:
+					return FetchType.LAZY;
+			}
+		}
+		// TODO: EAGER or LAZY?
+		return FetchType.LAZY;
+	}
 }
