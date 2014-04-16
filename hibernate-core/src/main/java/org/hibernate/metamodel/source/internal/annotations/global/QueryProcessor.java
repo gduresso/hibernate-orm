@@ -25,6 +25,7 @@ package org.hibernate.metamodel.source.internal.annotations.global;
 
 import java.util.Collection;
 import java.util.HashMap;
+
 import javax.persistence.LockModeType;
 import javax.persistence.ParameterMode;
 
@@ -41,7 +42,6 @@ import org.hibernate.annotations.QueryHints;
 import org.hibernate.boot.registry.classloading.spi.ClassLoaderService;
 import org.hibernate.engine.query.spi.sql.NativeSQLQueryRootReturn;
 import org.hibernate.engine.spi.NamedQueryDefinitionBuilder;
-import org.hibernate.engine.spi.NamedSQLQueryDefinition;
 import org.hibernate.engine.spi.NamedSQLQueryDefinitionBuilder;
 import org.hibernate.internal.CoreLogging;
 import org.hibernate.internal.CoreMessageLogger;
@@ -52,7 +52,6 @@ import org.hibernate.metamodel.source.internal.annotations.AnnotationBindingCont
 import org.hibernate.metamodel.source.internal.annotations.util.HibernateDotNames;
 import org.hibernate.metamodel.source.internal.annotations.util.JPADotNames;
 import org.hibernate.metamodel.source.internal.annotations.util.JandexHelper;
-
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationValue;
 
@@ -233,7 +232,7 @@ public class QueryProcessor {
 		final String query = JandexHelper.getValue( annotation, "query", String.class, classLoaderService );
 		builder.setQuery( query );
 		
-		if ( annotation.name().equals( JPADotNames.NAMED_QUERY ) ) {
+		if ( annotation.name().equals( JPADotNames.NAMED_NATIVE_QUERY ) ) {
 			bindJPANamedNativeQuery( annotation, builder, name, query, bindingContext );
 			
 			final String resultSetMapping = JandexHelper.getValue(
@@ -307,25 +306,10 @@ public class QueryProcessor {
 		if ( timeout != null && timeout < 0 ) {
 			timeout = null;
 		}
-		//TODO this 'javax.persistence.lock.timeout' has been mvoed to {@code AvailableSettings} in master
-		//we should change this when we merge this branch back.
-		Integer lockTimeout =  getInteger( hints, "javax.persistence.lock.timeout" , query, bindingContext );
-		lockTimeout = defaultToNull( lockTimeout );
 		
-		LockOptions lockOptions = new LockOptions( LockModeConverter.convertToLockMode( JandexHelper.getEnumValue(
-				annotation,
-				"lockMode",
-				LockModeType.class,
-				classLoaderService
-		) ) );
-		if ( lockTimeout != null ) {
-			lockOptions.setTimeOut( lockTimeout );
-		}
-
 		builder.setCacheable( getBoolean( hints, QueryHints.CACHEABLE, name, bindingContext ) )
 				.setCacheRegion( cacheRegion )
 				.setTimeout( timeout )
-				.setLockOptions( lockOptions )
 				.setFetchSize( defaultToNull( getInteger( hints, QueryHints.FETCH_SIZE, name, bindingContext ) ) )
 				.setFlushMode( getFlushMode( hints, QueryHints.FLUSH_MODE, name, bindingContext ) )
 				.setCacheMode( getCacheMode( hints, QueryHints.CACHE_MODE, name, bindingContext ) )
