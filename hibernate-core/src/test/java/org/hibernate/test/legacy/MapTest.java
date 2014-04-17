@@ -39,6 +39,7 @@ import org.hibernate.testing.FailureExpectedWithNewMetamodel;
 
 import static org.junit.Assert.assertTrue;
 
+@FailureExpectedWithNewMetamodel(message = "HbmXmlTransformer does not currently support EntityMode.MAP")
 public class MapTest extends LegacyTestCase {
 	@Override
 	public String[] getMappings() {
