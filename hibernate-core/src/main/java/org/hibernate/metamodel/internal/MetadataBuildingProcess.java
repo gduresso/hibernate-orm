@@ -126,6 +126,15 @@ public class MetadataBuildingProcess {
 	private static final Logger log = Logger.getLogger( MetadataBuildingProcess.class );
 
 	public static MetadataImpl build(MetadataSources sources, final MetadataBuildingOptions options) {
+		final ClassLoaderAccess classLoaderAccess = new ClassLoaderAccessImpl(
+				options.getTempClassLoader(),
+				options.getServiceRegistry()
+		);
+		
+		// It's necessary to delay the binding of XML resources until now.  ClassLoaderAccess is needed for
+		// reflection, etc.
+		sources.buildBindResults( classLoaderAccess );
+		
 		// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		// preliminary phases
 		final IndexView jandexView = handleJandex( options, sources );
@@ -135,10 +144,6 @@ public class MetadataBuildingProcess {
 		// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		// prep to start handling binding in earnest
 		final MappingDefaultsImpl mappingDefaults = new MappingDefaultsImpl( options );
-		final ClassLoaderAccess classLoaderAccess = new ClassLoaderAccessImpl(
-				options.getTempClassLoader(),
-				options.getServiceRegistry()
-		);
 		final JandexAccessImpl jandexAccess = new JandexAccessImpl(
 				jandexView,
 				classLoaderAccess
