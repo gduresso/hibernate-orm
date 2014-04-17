@@ -29,6 +29,7 @@ import javax.persistence.FetchType;
 import javax.xml.bind.JAXBElement;
 
 import org.hibernate.FlushMode;
+import org.hibernate.internal.util.ReflectHelper;
 import org.hibernate.internal.util.StringHelper;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbAny;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbAttributes;
@@ -881,13 +882,20 @@ public class HbmXmlTransformer {
 	private void transferEmbeddedAttributes(JaxbEntity entity, JaxbClassElement hbmClass) {
 		for (JaxbComponentElement hbmComponent : hbmClass.getComponent()) {
 			entity.getAttributes().getEmbedded().add( transferEmbeddedAttribute( hbmComponent ) );
-			ormRoot.getEmbeddable().add( transferEmbeddable( hbmComponent ) );
+			ormRoot.getEmbeddable().add( transferEmbeddable( entity, hbmComponent ) );
 		}
 	}
 	
-	private JaxbEmbeddable transferEmbeddable(JaxbComponentElement hbmComponent) {
+	private JaxbEmbeddable transferEmbeddable(JaxbEntity entity, JaxbComponentElement hbmComponent) {
 		final JaxbEmbeddable embeddable = new JaxbEmbeddable();
-		embeddable.setClazz( hbmComponent.getClazz() );
+		if (StringHelper.isEmpty( hbmComponent.getClazz() )) {
+			// HBM allows this to be empty, so we must get the Embeddable class name with reflection.
+			embeddable.setClazz( getPropertyType( entity.getClazz(), hbmComponent.getName() ).getName() );
+		}
+		else {
+			embeddable.setClazz( hbmComponent.getClazz() );
+		}
+		
 		embeddable.setAttributes( new JaxbEmbeddableAttributes() );
 		for (JaxbPropertyElement property : hbmComponent.getProperty()) {
 			embeddable.getAttributes().getBasic().add( transferBasicAttribute( property ) );
@@ -1065,5 +1073,19 @@ public class HbmXmlTransformer {
 		}
 		// TODO: EAGER or LAZY?
 		return FetchType.LAZY;
+	}
+	
+	private Class getClass(String className) {
+		final String defaultPackageName = ormRoot.getPackage();
+		if ( StringHelper.isNotEmpty( className ) && className.indexOf( '.' ) < 0 && StringHelper.isNotEmpty( defaultPackageName ) ) {
+			className = StringHelper.qualify( defaultPackageName, className );
+		}
+		
+		return classLoaderAccess.classForName( className );
+	}
+	
+	private Class getPropertyType(String className, String propertyName) {
+		final Class clazz = getClass(className);
+		return ReflectHelper.reflectedPropertyClass( clazz, propertyName );
 	}
 }
