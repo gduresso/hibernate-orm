@@ -26,9 +26,11 @@ package org.hibernate.metamodel.source.internal.jandex;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.hibernate.internal.util.StringHelper;
+import org.hibernate.metamodel.source.internal.annotations.util.HibernateDotNames;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbElementCollection;
 import org.hibernate.metamodel.source.internal.jaxb.PersistentAttribute;
-
+import org.hibernate.type.SetType;
 import org.jboss.jandex.AnnotationValue;
 import org.jboss.jandex.ClassInfo;
 
@@ -51,13 +53,24 @@ public class ElementCollectionMocker extends PropertyMocker {
 	@Override
 	protected void doProcess() {
 		List<AnnotationValue> annotationValueList = new ArrayList<AnnotationValue>();
-		MockHelper.classValue(
-				"targetClass",
-				elementCollection.getTargetClass(),
-				annotationValueList,
-				getDefaults(),
-				indexBuilder.getServiceRegistry()
-		);
+		if (! StringHelper.isEmpty( elementCollection.getTargetClass() )) {
+			MockHelper.classValue( "targetClass", elementCollection.getTargetClass(), annotationValueList,
+					getDefaults(), indexBuilder.getServiceRegistry()
+			);
+		}
+		if (elementCollection.getType() != null) {
+			// TODO: Move this to a helper?
+			List<AnnotationValue> typeAnnotationValueList = new ArrayList<AnnotationValue>();
+			MockHelper.stringValue( "type", elementCollection.getType().getName(), typeAnnotationValueList );
+			create( HibernateDotNames.TYPE, typeAnnotationValueList );
+		}
+		if (elementCollection.getCollectionType() != null) {
+			// TODO: Move this to a helper?
+			String collectionTypeName = MockHelper.getCollectionType( elementCollection.getCollectionType().getName() );
+			List<AnnotationValue> collectionTypeAnnotationValueList = new ArrayList<AnnotationValue>();
+			MockHelper.stringValue( "type", collectionTypeName, collectionTypeAnnotationValueList );
+			create( HibernateDotNames.COLLECTION_TYPE, collectionTypeAnnotationValueList );
+		}
 		MockHelper.enumValue( "fetch", FETCH_TYPE, elementCollection.getFetch(), annotationValueList );
 		create( ELEMENT_COLLECTION, annotationValueList );
 		parseLob( elementCollection.getLob(), getTarget() );

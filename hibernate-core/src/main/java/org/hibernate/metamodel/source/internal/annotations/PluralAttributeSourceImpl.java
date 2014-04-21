@@ -69,7 +69,6 @@ import org.hibernate.metamodel.spi.PluralAttributeElementNature;
 import org.hibernate.metamodel.spi.PluralAttributeNature;
 import org.hibernate.metamodel.spi.binding.Caching;
 import org.hibernate.metamodel.spi.binding.CustomSQL;
-
 import org.jboss.jandex.AnnotationInstance;
 
 /**
@@ -105,7 +104,7 @@ public class PluralAttributeSourceImpl
 		this.typeSource = new HibernateTypeSourceImpl( pluralAttribute );
 
 
-		if ( pluralAttribute.getMappedByAttributeName() == null ) {
+		if ( ! pluralAttribute.isInverse() ) {
 			this.ownerAttributeSource = this;
 			this.elementSource = determineElementSource( this, this );
 		}
@@ -216,7 +215,7 @@ public class PluralAttributeSourceImpl
 
 	@Override
 	public boolean usesJoinTable() {
-		if ( pluralAttribute.getMappedByAttributeName() != null ) {
+		if ( pluralAttribute.isInverse() ) {
 			throw new IllegalStateException( "Cannot determine if a join table is used because plural attribute is not the owner." );
 		}
 		// By default, a unidirectional one-to-many (i.e., with mappedBy == null) uses a join table,
@@ -254,7 +253,7 @@ public class PluralAttributeSourceImpl
 				return new PluralAttributeElementSourceEmbeddedImpl( pluralAttributeSource );
 			}
 			case MANY_TO_MANY: {
-				if ( associationAttribute.getMappedByAttributeName() == null ) {
+				if ( ! associationAttribute.isInverse() ) {
 					return new PluralAttributeElementSourceAssociationManyToManyImpl( pluralAttributeSource );
 				}
 				else {
@@ -267,7 +266,7 @@ public class PluralAttributeSourceImpl
 						: ( (PluralAttributeSource) ownerAttributeSource ).usesJoinTable();
 
 				if ( usesJoinTable ) {
-					if ( associationAttribute.getMappedByAttributeName() == null ) {
+					if ( ! associationAttribute.isInverse() ) {
 						return new PluralAttributeElementSourceAssociationManyToManyImpl( pluralAttributeSource );
 					}
 					else {
@@ -275,7 +274,7 @@ public class PluralAttributeSourceImpl
 					}
 				}
 				else {
-					if ( associationAttribute.getMappedByAttributeName() == null ) {
+					if ( ! associationAttribute.isInverse() ) {
 						return new PluralAttributeElementSourceAssociationOneToManyImpl( pluralAttributeSource );
 					}
 					else {
@@ -301,7 +300,7 @@ public class PluralAttributeSourceImpl
 	public TableSpecificationSource getCollectionTableSpecificationSource() {
 		// todo - see org.hibernate.metamodel.internal.Binder#bindOneToManyCollectionKey
 		// todo - needs to cater for @CollectionTable and @JoinTable
-		if ( pluralAttribute.getMappedByAttributeName() != null ) {
+		if ( pluralAttribute.isInverse() ) {
 			throw new IllegalStateException( "Cannot get collection table because this association is not the owner." );
 		}
 		final AnnotationInstance joinTableAnnotation = pluralAttribute.getJoinTableAnnotation();
@@ -344,7 +343,7 @@ public class PluralAttributeSourceImpl
 
 	@Override
 	public boolean isInverse() {
-		return getMappedBy() != null;
+		return pluralAttribute.isInverse();
 	}
 
 	@Override
@@ -468,11 +467,27 @@ public class PluralAttributeSourceImpl
 	private void buildElementSource(AttributeSourceResolutionContext context) {
 		// elementSource has not been initialized, so we need to resolve it using the
 		// association owner.
+		
+		if (StringHelper.isEmpty( pluralAttribute.getMappedByAttributeName() )) {
+			// The attribute is inverse, but not mappedBy given (ex: HBM XML transformation uses the temporary
+			// @Inverse annotation since it cannot resolve the owning attribute on its own).  Attempt to resolve
+			// using the join columns.
+			// TODO: Move elsewhere?
+			final JavaTypeDescriptor elementType = pluralAttribute.getElementDetails().getJavaType();
+			final List<String> joinColumnNames = new ArrayList<String>();
+			for (Column joinColumn : pluralAttribute.getJoinColumnValues()) {
+				joinColumnNames.add( joinColumn.getName() );
+			}
+			pluralAttribute.setMappedByAttributeName( context.resolveAttributeName(
+					elementType.getName().toString(), joinColumnNames ) );
+		}
+		
 		// Get the owner attribute source that maps the opposite side of the association.
 		ownerAttributeSource = context.resolveAttributeSource(
 				pluralAttribute.getElementDetails().getJavaType().getName().toString(),
 				pluralAttribute.getMappedByAttributeName()
 		);
+		
 		// Initialize resolved entitySource.
 		elementSource = determineElementSource( ownerAttributeSource, this );
 		if ( !MappedByAssociationSource.class.isInstance( elementSource ) ) {

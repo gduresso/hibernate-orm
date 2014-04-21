@@ -1,7 +1,7 @@
 /*
  * Hibernate, Relational Persistence for Idiomatic Java
  *
- * Copyright (c) 2014, Red Hat Inc. or third-party contributors as
+ * Copyright (c) 2010, Red Hat Inc. or third-party contributors as
  * indicated by the @author tags or express copyright attribution
  * statements applied by the authors.  All third-party contributions are
  * distributed under license by Red Hat Inc.
@@ -21,24 +21,30 @@
  * 51 Franklin Street, Fifth Floor
  * Boston, MA  02110-1301  USA
  */
-package org.hibernate.metamodel.source.internal.annotations.attribute;
+package org.hibernate.annotations;
 
-import java.util.Set;
-import javax.persistence.CascadeType;
+import static java.lang.annotation.ElementType.FIELD;
+import static java.lang.annotation.ElementType.METHOD;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
+
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
+
+import javax.persistence.ManyToMany;
+import javax.persistence.OneToMany;
+import javax.persistence.OneToOne;
+
+import org.hibernate.metamodel.source.internal.jaxb.hbm.HbmXmlTransformer;
 
 /**
- * @author Steve Ebersole
+ * Temporarily exists solely for transforming HBM to JPA (see {@link HbmXmlTransformer}).
+ *
+ * @author Brett Meyer
+ * 
+ * @deprecated Use {@link OneToOne#mappedBy()}, {@link OneToMany#mappedBy()}, or {@link ManyToMany#mappedBy()}.
  */
-public interface AssociationAttribute {
-	public String getMappedByAttributeName();
-	@Deprecated
-	public boolean isInverse();
-
-	public Set<CascadeType> getJpaCascadeTypes();
-	public Set<org.hibernate.annotations.CascadeType> getHibernateCascadeTypes();
-	public boolean isOrphanRemoval();
-
-	public boolean isOptional();
-	public boolean isIgnoreNotFound();
-	public boolean isUnWrapProxy();
+@Target({METHOD, FIELD})
+@Retention(RUNTIME)
+@Deprecated
+public @interface Inverse {
 }

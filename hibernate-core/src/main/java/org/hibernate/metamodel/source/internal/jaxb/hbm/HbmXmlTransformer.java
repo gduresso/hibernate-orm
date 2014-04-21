@@ -39,6 +39,7 @@ import org.hibernate.metamodel.source.internal.jaxb.JaxbCacheModeType;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbCascadeType;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbColumn;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbDiscriminatorColumn;
+import org.hibernate.metamodel.source.internal.jaxb.JaxbElementCollection;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbEmbeddable;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbEmbeddableAttributes;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbEmbedded;
@@ -62,10 +63,12 @@ import org.hibernate.metamodel.source.internal.jaxb.JaxbHbmTypeDef;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbId;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbIdClass;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbJoinColumn;
+import org.hibernate.metamodel.source.internal.jaxb.JaxbManyToMany;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbManyToOne;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbNamedNativeQuery;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbNamedQuery;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbNaturalId;
+import org.hibernate.metamodel.source.internal.jaxb.JaxbOneToMany;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbOneToOne;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbPersistenceUnitMetadata;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbQueryParamType;
@@ -595,12 +598,12 @@ public class HbmXmlTransformer {
 		transferEmbeddedAttributes( entity, hbmClass );
 		transferOneToOneAttributes( entity, hbmClass );
 		transferManyToOneAttributes( entity, hbmClass );
-		transferManyToManyAttributes( entity, hbmClass );
 		transferAnyAttributes( entity, hbmClass );
 		transferManyToAnyAttributes( entity, hbmClass );
 		transferPrimitiveArrayAttributes( entity, hbmClass );
 		transferPropertiesGrouping( entity, hbmClass );
 		transferNaturalIdentifiers( entity, hbmClass );
+		transferPluralAttribute( entity, hbmClass );
 	}
 
 	private void transferIdentifier(JaxbEntity entity, JaxbClassElement hbmClass) {
@@ -973,10 +976,6 @@ public class HbmXmlTransformer {
 		return m2o;
 	}
 
-	private void transferManyToManyAttributes(JaxbEntity entity, JaxbClassElement hbmClass) {
-
-	}
-
 	private void transferAnyAttributes(JaxbEntity entity, JaxbClassElement hbmClass) {
 
 	}
@@ -1026,6 +1025,95 @@ public class HbmXmlTransformer {
 		// todo : implement
 	}
 	
+	private void transferPluralAttribute(JaxbEntity entity, JaxbClassElement hbmClass) {
+		for (JaxbSetElement hbmSet : hbmClass.getSet()) {
+			transferPluralAttribute( entity, hbmSet, "set" );
+		}
+		
+		for (JaxbBagElement hbmBag : hbmClass.getBag()) {
+			transferPluralAttribute( entity, hbmBag, "bag" );
+		}
+		
+		for (JaxbListElement hbmList : hbmClass.getList()) {
+			transferPluralAttribute( entity, hbmList, "list" );
+		}
+		
+		for (JaxbMapElement hbmMap : hbmClass.getMap()) {
+			transferPluralAttribute( entity, hbmMap, "map" );
+		}
+	}
+	
+	private void transferPluralAttribute(JaxbEntity entity, PluralAttributeElement pluralAttribute,
+			String collectionTypeName) {
+		if (pluralAttribute.getElement() != null) {
+			entity.getAttributes().getElementCollection().add( transferElementCollection(
+					pluralAttribute.getName(), collectionTypeName, pluralAttribute.getElement() ) );
+		}
+		if (pluralAttribute.getOneToMany() != null) {
+			entity.getAttributes().getOneToMany().add( transferOneToManyAttribute(
+					pluralAttribute, collectionTypeName ) );
+		}
+		if (pluralAttribute.getManyToMany() != null) {
+			entity.getAttributes().getManyToMany().add( transferManyToManyAttribute(
+					pluralAttribute, collectionTypeName ) );
+		}
+	}
+	
+	private JaxbElementCollection transferElementCollection(String propertyName, String collectionTypeName,
+			JaxbElementElement hbmElement) {
+		final JaxbElementCollection element = new JaxbElementCollection();
+		element.setName( propertyName );
+		final JaxbColumn column = new JaxbColumn();
+		column.setName( hbmElement.getColumnAttribute() );
+		element.setColumn( column );
+		final JaxbHbmType elementType = new JaxbHbmType();
+		elementType.setName( hbmElement.getTypeAttribute() );
+		element.setType( elementType );
+		final JaxbHbmType collectionType = new JaxbHbmType();
+		collectionType.setName( collectionTypeName );
+		element.setCollectionType( collectionType );
+		return element;
+	}
+
+	private JaxbOneToMany transferOneToManyAttribute(PluralAttributeElement pluralAttribute, String collectionTypeName) {
+		final JaxbOneToManyElement hbmO2M = pluralAttribute.getOneToMany();
+		final JaxbOneToMany o2m = new JaxbOneToMany();
+		final JaxbHbmType collectionType = new JaxbHbmType();
+		collectionType.setName( collectionTypeName );
+		o2m.setCollectionType( collectionType );
+		o2m.setAttributeAccessor( pluralAttribute.getAccess() );
+		o2m.setCascade( convertCascadeType( pluralAttribute.getCascade() ) );
+		o2m.setFetch( convert( pluralAttribute.getFetch() ) );
+		o2m.setName( pluralAttribute.getName() );
+		o2m.setTargetEntity( hbmO2M.getClazz() );
+		o2m.setInverse( pluralAttribute.isInverse() );
+		if (pluralAttribute.getKey() != null) {
+			final JaxbKeyElement hbmKey = pluralAttribute.getKey();
+			final String columnName = hbmKey.getColumnAttribute();
+			// TODO: handle other JaxbKeyElement props
+			final JaxbJoinColumn joinColumn = new JaxbJoinColumn();
+			joinColumn.setName( columnName );
+			// TODO: Handle other JaxbJoinColumn props
+			o2m.getJoinColumn().add( joinColumn );
+		}
+		return o2m;
+	}
+
+	private JaxbManyToMany transferManyToManyAttribute(PluralAttributeElement pluralAttribute, String collectionTypeName) {
+		final JaxbManyToManyElement hbmM2M = pluralAttribute.getManyToMany();
+		final JaxbManyToMany m2m = new JaxbManyToMany();
+		final JaxbHbmType collectionType = new JaxbHbmType();
+		collectionType.setName( collectionTypeName );
+		m2m.setCollectionType( collectionType );
+		m2m.setAttributeAccessor( pluralAttribute.getAccess() );
+		m2m.setCascade( convertCascadeType( pluralAttribute.getCascade() ) );
+		m2m.setFetch( convert( pluralAttribute.getFetch() ) );
+		m2m.setName( pluralAttribute.getName() );
+		m2m.setTargetEntity( hbmM2M.getClazz() );
+		m2m.setInverse( pluralAttribute.isInverse() );
+		return m2m;
+	}
+	
 	private JaxbCascadeType convertCascadeType(String s) {
 		final JaxbCascadeType cascadeType = new JaxbCascadeType();
 		
@@ -1063,6 +1151,19 @@ public class HbmXmlTransformer {
 	}
 	
 	private FetchType convert(JaxbFetchStyleAttribute hbmFetch) {
+		if (hbmFetch != null) {
+			switch (hbmFetch) {
+				case JOIN:
+					return FetchType.EAGER;
+				case SELECT:
+					return FetchType.LAZY;
+			}
+		}
+		// TODO: EAGER or LAZY?
+		return FetchType.LAZY;
+	}
+	
+	private FetchType convert(JaxbFetchAttributeWithSubselect hbmFetch) {
 		if (hbmFetch != null) {
 			switch (hbmFetch) {
 				case JOIN:

@@ -44,6 +44,10 @@ import org.hibernate.metamodel.source.internal.annotations.util.JPADotNames;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbCacheModeType;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbCascadeType;
 import org.hibernate.service.ServiceRegistry;
+import org.hibernate.type.BagType;
+import org.hibernate.type.ListType;
+import org.hibernate.type.MapType;
+import org.hibernate.type.SetType;
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationTarget;
 import org.jboss.jandex.AnnotationValue;
@@ -506,5 +510,21 @@ public class MockHelper {
 			default:
 				throw new AssertionFailure( "Unknown jaxbCacheMode: " + jaxbCacheMode );
 		}
+	}
+	
+	public static String getCollectionType(String collectionTypeName) {
+		if (collectionTypeName.equalsIgnoreCase( "set" )) {
+			collectionTypeName = SetType.class.getName();
+		}
+		if (collectionTypeName.equalsIgnoreCase( "bag" )) {
+			collectionTypeName = BagType.class.getName();
+		}
+		if (collectionTypeName.equalsIgnoreCase( "list" )) {
+			collectionTypeName = ListType.class.getName();
+		}
+		if (collectionTypeName.equalsIgnoreCase( "map" )) {
+			collectionTypeName = MapType.class.getName();
+		}
+		return collectionTypeName;
 	}
 }

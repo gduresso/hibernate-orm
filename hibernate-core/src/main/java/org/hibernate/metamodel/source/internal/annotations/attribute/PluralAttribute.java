@@ -102,7 +102,8 @@ public class PluralAttribute
 			PluralAttributeNature.ARRAY
 	);
 
-	private final String mappedByAttributeName;
+	private String mappedByAttributeName;
+	private final boolean isInverse;
 	private final Set<CascadeType> jpaCascadeTypes;
 	private final Set<org.hibernate.annotations.CascadeType> hibernateCascadeTypes;
 	private final boolean isOrphanRemoval;
@@ -276,9 +277,13 @@ public class PluralAttribute
 					backingMember,
 					getContext()
 			);
+			
+			final AnnotationInstance inverseAnnotation = backingMember.getAnnotations().get( HibernateDotNames.INVERSE );
+			isInverse = inverseAnnotation != null;
 		}
 		else {
 			this.joinTableAnnotation = null;
+			isInverse = true;
 		}
 		joinColumnValues.trimToSize();
 		inverseJoinColumnValues.trimToSize();
@@ -746,6 +751,15 @@ public class PluralAttribute
 		return mappedByAttributeName;
 	}
 
+	public void setMappedByAttributeName(String mappedByAttributeName) {
+		this.mappedByAttributeName = mappedByAttributeName;
+	}
+
+	@Override
+	public boolean isInverse() {
+		return isInverse;
+	}
+
 	@Override
 	public Set<CascadeType> getJpaCascadeTypes() {
 		return jpaCascadeTypes;
@@ -866,7 +880,7 @@ public class PluralAttribute
 	public boolean isIncludeInOptimisticLocking() {
 		return hasOptimisticLockAnnotation()
 				? super.isIncludeInOptimisticLocking()
-				: StringHelper.isEmpty(	getMappedByAttributeName() );
+				: !isInverse;
 	}
 
 	public int getBatchSize() {

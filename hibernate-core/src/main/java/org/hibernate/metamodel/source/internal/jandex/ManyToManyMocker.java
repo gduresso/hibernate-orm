@@ -26,9 +26,9 @@ package org.hibernate.metamodel.source.internal.jandex;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.hibernate.metamodel.source.internal.annotations.util.HibernateDotNames;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbManyToMany;
 import org.hibernate.metamodel.source.internal.jaxb.PersistentAttribute;
-
 import org.jboss.jandex.AnnotationValue;
 import org.jboss.jandex.ClassInfo;
 
@@ -50,6 +50,17 @@ public class ManyToManyMocker extends PropertyMocker {
 
 	@Override
 	protected void doProcess() {
+		if (manyToMany.getCollectionType() != null) {
+			// TODO: Move this to a helper?
+			String collectionTypeName = MockHelper.getCollectionType( manyToMany.getCollectionType().getName() );
+			List<AnnotationValue> annotationValueList = new ArrayList<AnnotationValue>();
+			MockHelper.stringValue( "type", collectionTypeName, annotationValueList );
+			create( HibernateDotNames.COLLECTION_TYPE, annotationValueList );
+		}
+		if (manyToMany.isInverse()) {
+			List<AnnotationValue> annotationValueList = new ArrayList<AnnotationValue>();
+			create( HibernateDotNames.INVERSE, getTarget(), annotationValueList );
+		}
 		List<AnnotationValue> annotationValueList = new ArrayList<AnnotationValue>();
 		MockHelper.classValue( "targetEntity", manyToMany.getTargetEntity(), annotationValueList, getDefaults(),
 				indexBuilder.getServiceRegistry() );
