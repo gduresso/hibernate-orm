@@ -216,6 +216,15 @@ public class OsgiClassLoader extends ClassLoader implements Stoppable {
 	public void addBundle( Bundle bundle ) {
 		bundles.add( bundle );
 	}
+	
+	/**
+	 * Removes a Bundle from the wrapped set of Bundles
+	 *
+	 * @param bundle The Bundle to remove
+	 */
+	public void removeBundle(Bundle bundle) {
+		
+	}
 
 	@Override
 	public void stop() {

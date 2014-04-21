@@ -34,6 +34,8 @@ import org.hibernate.internal.util.ClassLoaderHelper;
 import org.hibernate.jpa.HibernatePersistenceProvider;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
+import org.osgi.framework.BundleEvent;
+import org.osgi.framework.BundleListener;
 import org.osgi.framework.FrameworkUtil;
 import org.osgi.framework.ServiceRegistration;
 
@@ -59,7 +61,7 @@ import org.osgi.framework.ServiceRegistration;
  * @author Tim Ward
  */
 @SuppressWarnings("UnusedDeclaration")
-public class HibernateBundleActivator implements BundleActivator {
+public class HibernateBundleActivator implements BundleActivator, BundleListener {
 	
 	private OsgiClassLoader osgiClassLoader;
 	private OsgiServiceUtil osgiServiceUtil;
@@ -95,10 +97,16 @@ public class HibernateBundleActivator implements BundleActivator {
 				new OsgiSessionFactoryService( osgiClassLoader, osgiJtaPlatform, osgiServiceUtil ),
 				new Hashtable()
 		);
+		
+		// start listening
+		context.addBundleListener( this );
 	}
 
 	@Override
 	public void stop(BundleContext context) throws Exception {
+		// start listening
+		context.removeBundleListener( this );
+		
 		osgiClassLoader.stop();
 		osgiClassLoader = null;
 		osgiServiceUtil.stop();
@@ -110,5 +118,14 @@ public class HibernateBundleActivator implements BundleActivator {
 		sessionFactoryService = null;
 
 		ClassLoaderHelper.overridenClassLoader = null;
+	}
+
+	@Override
+	public void bundleChanged(BundleEvent event) {
+		if (event.getType() == BundleEvent.STOPPING) {
+			// This is mainly to clean up OsgiClassLoader if the requestingBundle (the PU client bundle) is restarted,
+			// etc.  This *should* allow the client bundle to cleanly request a new SF without problems.
+			osgiClassLoader.removeBundle( event.getBundle() );
+		}
 	}
 }
