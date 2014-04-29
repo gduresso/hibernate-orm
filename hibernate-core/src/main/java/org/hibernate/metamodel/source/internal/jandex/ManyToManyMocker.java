@@ -79,5 +79,9 @@ public class ManyToManyMocker extends PropertyMocker {
 		if ( manyToMany.getOrderBy() != null ) {
 			create( ORDER_BY, MockHelper.stringValueArray( "value", manyToMany.getOrderBy() ) );
 		}
+		
+		annotationValueList = new ArrayList<AnnotationValue>();
+		MockHelper.cascadeValue( "value", manyToMany.getHbmCascade(), annotationValueList );
+		create( HibernateDotNames.CASCADE, getTarget(), annotationValueList );
 	}
 }

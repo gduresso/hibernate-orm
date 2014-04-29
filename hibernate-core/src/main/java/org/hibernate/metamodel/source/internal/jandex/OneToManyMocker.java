@@ -68,6 +68,7 @@ public class OneToManyMocker extends PropertyMocker {
 		MockHelper.stringValue( "mappedBy", oneToMany.getMappedBy(), annotationValueList );
 		MockHelper.booleanValue( "orphanRemoval", oneToMany.isOrphanRemoval(), annotationValueList );
 		MockHelper.cascadeValue( "cascade", oneToMany.getCascade(), isDefaultCascadePersist(), annotationValueList );
+		MockHelper.booleanValue( "orphanRemoval", oneToMany.isOrphanRemoval(), annotationValueList );
 		create( ONE_TO_MANY, getTarget(), annotationValueList );
 		parseAttributeOverrides( oneToMany.getMapKeyAttributeOverride(), getTarget() );
 		parseMapKeyJoinColumnList( oneToMany.getMapKeyJoinColumn(), getTarget() );
@@ -82,5 +83,9 @@ public class OneToManyMocker extends PropertyMocker {
 		if ( oneToMany.getOrderBy() != null ) {
 			create( ORDER_BY, getTarget(), MockHelper.stringValueArray( "value", oneToMany.getOrderBy() ) );
 		}
+		
+		annotationValueList = new ArrayList<AnnotationValue>();
+		MockHelper.cascadeValue( "value", oneToMany.getHbmCascade(), annotationValueList );
+		create( HibernateDotNames.CASCADE, getTarget(), annotationValueList );
 	}
 }

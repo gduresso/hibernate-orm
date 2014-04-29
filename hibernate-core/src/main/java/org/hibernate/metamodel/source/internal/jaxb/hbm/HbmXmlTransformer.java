@@ -49,6 +49,7 @@ import org.hibernate.metamodel.source.internal.jaxb.JaxbEntity;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbEntityMappings;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbForeignKey;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbGeneratedValue;
+import org.hibernate.metamodel.source.internal.jaxb.JaxbHbmCascadeType;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbHbmCustomSql;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbHbmCustomSqlCheckEnum;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbHbmFetchProfile;
@@ -931,7 +932,8 @@ public class HbmXmlTransformer {
 	private JaxbOneToOne transferOneToOneAttribute(JaxbOneToOneElement hbmO2O) {
 		final JaxbOneToOne o2o = new JaxbOneToOne();
 		o2o.setAttributeAccessor( hbmO2O.getAccess() );
-		o2o.setCascade( convertCascadeType( hbmO2O.getCascade() ) );
+		o2o.setHbmCascade( convertCascadeType( hbmO2O.getCascade() ) );
+		o2o.setOrphanRemoval( isOrphanRemoval( hbmO2O.getCascade() ) );
 		o2o.setFetch( convert( hbmO2O.getFetch() ) );
 		o2o.setForeignKey( new JaxbForeignKey() );
 		o2o.getForeignKey().setName( hbmO2O.getForeignKey() );
@@ -954,7 +956,7 @@ public class HbmXmlTransformer {
 	private JaxbManyToOne transferManyToOneAttribute(JaxbManyToOneElement hbmM2O) {
 		final JaxbManyToOne m2o = new JaxbManyToOne();
 		m2o.setAttributeAccessor( hbmM2O.getAccess() );
-		m2o.setCascade( convertCascadeType( hbmM2O.getCascade() ) );
+		m2o.setHbmCascade( convertCascadeType( hbmM2O.getCascade() ) );
 		m2o.setFetch( convert( hbmM2O.getFetch() ) );
 		m2o.setForeignKey( new JaxbForeignKey() );
 		m2o.getForeignKey().setName( hbmM2O.getForeignKey() );
@@ -1082,7 +1084,8 @@ public class HbmXmlTransformer {
 		collectionType.setName( collectionTypeName );
 		o2m.setCollectionType( collectionType );
 		o2m.setAttributeAccessor( pluralAttribute.getAccess() );
-		o2m.setCascade( convertCascadeType( pluralAttribute.getCascade() ) );
+		o2m.setHbmCascade( convertCascadeType( pluralAttribute.getCascade() ) );
+		o2m.setOrphanRemoval( isOrphanRemoval( pluralAttribute.getCascade() ) );
 		o2m.setFetch( convert( pluralAttribute.getFetch() ) );
 		o2m.setName( pluralAttribute.getName() );
 		o2m.setTargetEntity( hbmO2M.getClazz() );
@@ -1106,7 +1109,7 @@ public class HbmXmlTransformer {
 		collectionType.setName( collectionTypeName );
 		m2m.setCollectionType( collectionType );
 		m2m.setAttributeAccessor( pluralAttribute.getAccess() );
-		m2m.setCascade( convertCascadeType( pluralAttribute.getCascade() ) );
+		m2m.setHbmCascade( convertCascadeType( pluralAttribute.getCascade() ) );
 		m2m.setFetch( convert( pluralAttribute.getFetch() ) );
 		m2m.setName( pluralAttribute.getName() );
 		m2m.setTargetEntity( hbmM2M.getClazz() );
@@ -1114,40 +1117,49 @@ public class HbmXmlTransformer {
 		return m2m;
 	}
 	
-	private JaxbCascadeType convertCascadeType(String s) {
-		final JaxbCascadeType cascadeType = new JaxbCascadeType();
+	private JaxbHbmCascadeType convertCascadeType(String s) {
+		final JaxbHbmCascadeType cascadeType = new JaxbHbmCascadeType();
 		
 		if (! StringHelper.isEmpty( s )) {
 			s = s.replaceAll( " ", "" );
+			s = StringHelper.toLowerCase( s );
 			final String[] split = s.split( "," );
 			for (String hbmCascade : split) {
-				if (hbmCascade.equalsIgnoreCase( "all" )) {
+				if (hbmCascade.contains( "all" )) {
 					cascadeType.setCascadeAll( new JaxbEmptyType() );
 				}
-				else if (hbmCascade.equalsIgnoreCase( "persist" )) {
+				if (hbmCascade.contains( "persist" )) {
 					cascadeType.setCascadePersist( new JaxbEmptyType() );
 				}
-				else if (hbmCascade.equalsIgnoreCase( "merge" )) {
+				if (hbmCascade.contains( "merge" )) {
 					cascadeType.setCascadeMerge( new JaxbEmptyType() );
 				}
-				else if (hbmCascade.equalsIgnoreCase( "refresh" )) {
+				if (hbmCascade.contains( "refresh" )) {
 					cascadeType.setCascadeRefresh( new JaxbEmptyType() );
 				}
-				else if (hbmCascade.equalsIgnoreCase( "save-update" )) {
-					// TODO
+				if (hbmCascade.contains( "save-update" )) {
+					cascadeType.setCascadeSaveUpdate( new JaxbEmptyType() );
 				}
-				else if (hbmCascade.equalsIgnoreCase( "evict" )) {
-					// TODO
+				if (hbmCascade.contains( "evict" ) || hbmCascade.contains( "detach" )) {
+					cascadeType.setCascadeDetach( new JaxbEmptyType() );
 				}
-				else if (hbmCascade.equalsIgnoreCase( "replicate" )) {
-					// TODO
+				if (hbmCascade.contains( "replicate" )) {
+					cascadeType.setCascadeReplicate( new JaxbEmptyType() );
 				}
-				else if (hbmCascade.equalsIgnoreCase( "lock" )) {
-					// TODO
+				if (hbmCascade.contains( "lock" )) {
+					cascadeType.setCascadeLock( new JaxbEmptyType() );
 				}
 			}
 		}
 		return cascadeType;
+	}
+	
+	private boolean isOrphanRemoval(String s) {
+		if (! StringHelper.isEmpty( s )) {
+			s = StringHelper.toLowerCase( s );
+			return s.contains( "orphan" );
+		}
+		return false;
 	}
 	
 	private FetchType convert(JaxbFetchStyleAttribute hbmFetch) {
