@@ -68,7 +68,6 @@ public class OneToManyMocker extends PropertyMocker {
 		MockHelper.stringValue( "mappedBy", oneToMany.getMappedBy(), annotationValueList );
 		MockHelper.booleanValue( "orphanRemoval", oneToMany.isOrphanRemoval(), annotationValueList );
 		MockHelper.cascadeValue( "cascade", oneToMany.getCascade(), isDefaultCascadePersist(), annotationValueList );
-		MockHelper.booleanValue( "orphanRemoval", oneToMany.isOrphanRemoval(), annotationValueList );
 		create( ONE_TO_MANY, getTarget(), annotationValueList );
 		parseAttributeOverrides( oneToMany.getMapKeyAttributeOverride(), getTarget() );
 		parseMapKeyJoinColumnList( oneToMany.getMapKeyJoinColumn(), getTarget() );

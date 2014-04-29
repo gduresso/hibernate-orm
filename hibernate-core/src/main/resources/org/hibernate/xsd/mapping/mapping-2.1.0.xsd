@@ -1361,6 +1361,7 @@
         <xsd:attribute name="attribute-accessor" type="xsd:string" />
         <xsd:attribute name="mapped-by" type="xsd:string"/>
         <xsd:attribute name="inverse" type="xsd:boolean"/> <!-- DEPRECATED -->
+        <xsd:attribute name="hbmKey" type="xsd:string"/> <!-- DEPRECATED (needed to carry the inverse side's <key> -->
     </xsd:complexType>
 
 

@@ -280,6 +280,13 @@ public class PluralAttribute
 			
 			final AnnotationInstance inverseAnnotation = backingMember.getAnnotations().get( HibernateDotNames.INVERSE );
 			isInverse = inverseAnnotation != null;
+			
+			// TODO: Temporary!
+			if (inverseAnnotation != null && inverseAnnotation.value( "hbmKey" ) != null) {
+				final Column joinColumn = new Column();
+				joinColumn.setName( inverseAnnotation.value( "hbmKey" ).asString() );
+				joinColumnValues.add( joinColumn );
+			}
 		}
 		else {
 			this.joinTableAnnotation = null;

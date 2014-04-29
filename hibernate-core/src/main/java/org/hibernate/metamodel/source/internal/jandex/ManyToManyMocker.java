@@ -59,6 +59,7 @@ public class ManyToManyMocker extends PropertyMocker {
 		}
 		if (manyToMany.isInverse()) {
 			List<AnnotationValue> annotationValueList = new ArrayList<AnnotationValue>();
+			MockHelper.stringValue( "hbmKey", manyToMany.getHbmKey(), annotationValueList );
 			create( HibernateDotNames.INVERSE, getTarget(), annotationValueList );
 		}
 		List<AnnotationValue> annotationValueList = new ArrayList<AnnotationValue>();

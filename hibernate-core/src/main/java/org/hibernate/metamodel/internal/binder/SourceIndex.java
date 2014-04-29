@@ -49,6 +49,7 @@ import org.hibernate.metamodel.source.spi.NonAggregatedCompositeIdentifierSource
 import org.hibernate.metamodel.source.spi.PluralAttributeIndexSourceResolver;
 import org.hibernate.metamodel.source.spi.PluralAttributeSource;
 import org.hibernate.metamodel.source.spi.RelationalValueSource;
+import org.hibernate.metamodel.source.spi.RelationalValueSourceContainer;
 import org.hibernate.metamodel.source.spi.SimpleIdentifierSource;
 import org.hibernate.metamodel.source.spi.SingularAttributeSource;
 import org.hibernate.metamodel.source.spi.ToOneAttributeSource;
@@ -544,7 +545,7 @@ public class SourceIndex {
 						for (RelationalValueSource relationalSource : singularSource.relationalValueSources()) {
 							if (ColumnSource.class.isInstance( relationalSource )) {
 								final ColumnSource columnSource = (ColumnSource) relationalSource;
-								if (columnNames.contains( columnSource.getName())) {
+								if (StringHelper.containsIgnoreCase( columnNames, columnSource.getName() )) {
 									count++;
 								}
 							}
@@ -555,7 +556,24 @@ public class SourceIndex {
 						}
 					}
 					else if (PluralAttributeSource.class.isInstance( attributeSource )) {
-						// TODO -- I *think* this would be needed for M2M
+						final PluralAttributeSource pluralSource = (PluralAttributeSource) attributeSource;
+						if (pluralSource.getElementSource() instanceof RelationalValueSourceContainer) {
+							final RelationalValueSourceContainer relationalSourceContainer
+									= (RelationalValueSourceContainer) pluralSource.getElementSource();
+							int count = 0;
+							for (RelationalValueSource relationalSource : relationalSourceContainer.relationalValueSources()) {
+								if (ColumnSource.class.isInstance( relationalSource )) {
+									final ColumnSource columnSource = (ColumnSource) relationalSource;
+									if (StringHelper.containsIgnoreCase( columnNames, columnSource.getName() )) {
+										count++;
+									}
+								}
+							}
+							if (count == columnNames.size()
+									&& pluralSource.getPluralAttribute().getJoinColumnValues().size() == columnNames.size()) {
+								return attributeSource.getName();
+							}
+						}
 					}
 					return null;
 				}

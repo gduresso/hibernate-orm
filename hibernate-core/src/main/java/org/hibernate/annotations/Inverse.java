@@ -37,7 +37,9 @@ import javax.persistence.OneToOne;
 import org.hibernate.metamodel.source.internal.jaxb.hbm.HbmXmlTransformer;
 
 /**
- * Temporarily exists solely for transforming HBM to JPA (see {@link HbmXmlTransformer}).
+ * Can be used to mark an association as the inverse side, without explicitly identifying the "mappedBy" on the
+ * association annotation itself.  This solely exists for transforming HBM to JPA (see {@link HbmXmlTransformer}).
+ * Direct use should be completely avoided.
  *
  * @author Brett Meyer
  * 
@@ -47,4 +49,11 @@ import org.hibernate.metamodel.source.internal.jaxb.hbm.HbmXmlTransformer;
 @Retention(RUNTIME)
 @Deprecated
 public @interface Inverse {
+	
+	/**
+	 * Primarily used to carry a M2M inverse side's <key>.
+	 * 
+	 * @return hbmKey
+	 */
+	String hbmKey();
 }

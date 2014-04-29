@@ -182,6 +182,7 @@ public class PluralAttributeSourceImpl
 		return getPluralAttribute();
 	}
 
+	@Override
 	public PluralAttribute getPluralAttribute() {
 		return pluralAttribute;
 	}
@@ -197,9 +198,6 @@ public class PluralAttributeSourceImpl
 
 	@Override
 	public PluralAttributeElementSource getElementSource() {
-		if ( elementSource == null ) {
-			throw new IllegalStateException( "elementSource has not been initialized yet." );
-		}
 		return elementSource;
 	}
 
@@ -469,8 +467,8 @@ public class PluralAttributeSourceImpl
 		// association owner.
 		
 		if (StringHelper.isEmpty( pluralAttribute.getMappedByAttributeName() )) {
-			// The attribute is inverse, but not mappedBy given (ex: HBM XML transformation uses the temporary
-			// @Inverse annotation since it cannot resolve the owning attribute on its own).  Attempt to resolve
+			// The attribute is inverse, but no mappedBy given (ex: HBM XML transformation uses the temporary
+			// @Inverse annotation since it cannot reliably find the owning attribute on its own).  Attempt to resolve
 			// using the join columns.
 			// TODO: Move elsewhere?
 			final JavaTypeDescriptor elementType = pluralAttribute.getElementDetails().getJavaType();

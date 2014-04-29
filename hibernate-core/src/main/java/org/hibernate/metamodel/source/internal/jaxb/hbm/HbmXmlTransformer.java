@@ -33,6 +33,7 @@ import javax.xml.bind.JAXBElement;
 import org.hibernate.FlushMode;
 import org.hibernate.internal.util.ReflectHelper;
 import org.hibernate.internal.util.StringHelper;
+import org.hibernate.mapping.Collection;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbAny;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbAttributes;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbBasic;
@@ -65,6 +66,7 @@ import org.hibernate.metamodel.source.internal.jaxb.JaxbHbmTypeDef;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbId;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbIdClass;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbJoinColumn;
+import org.hibernate.metamodel.source.internal.jaxb.JaxbJoinTable;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbManyToMany;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbManyToOne;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbNamedNativeQuery;
@@ -1157,7 +1159,43 @@ public class HbmXmlTransformer {
 		m2m.setFetch( convert( pluralAttribute.getFetch() ) );
 		m2m.setName( pluralAttribute.getName() );
 		m2m.setTargetEntity( hbmM2M.getClazz() );
+		m2m.setOrderBy( hbmM2M.getOrderBy() );
 		m2m.setInverse( pluralAttribute.isInverse() );
+		if (pluralAttribute.getKey() != null) {
+			final JaxbKeyElement hbmKey = pluralAttribute.getKey();
+			final String columnName = hbmKey.getColumnAttribute();
+			if (m2m.isInverse()) {
+				// Only set the <join-table> on the owning side.  Since we only have the column name here, we'll have
+				// to resolve it later.
+				m2m.setHbmKey( columnName );
+				if (StringHelper.isEmpty( columnName )) {
+					m2m.setHbmKey( Collection.DEFAULT_ELEMENT_COLUMN_NAME );
+				}
+				else {
+					m2m.setHbmKey( columnName );
+				}
+			}
+			else {
+				// TODO: handle other JaxbKeyElement props
+				final JaxbJoinColumn joinColumn = new JaxbJoinColumn();
+				joinColumn.setName( columnName );
+				// TODO: Handle other JaxbJoinColumn props
+				final JaxbJoinColumn inverseJoinColumn = new JaxbJoinColumn();
+				if (StringHelper.isEmpty( hbmM2M.getColumnAttribute() )) {
+					inverseJoinColumn.setName( Collection.DEFAULT_ELEMENT_COLUMN_NAME );
+				}
+				else {
+					inverseJoinColumn.setName( hbmM2M.getColumnAttribute() );
+				}
+				final JaxbJoinTable joinTable = new JaxbJoinTable();
+				joinTable.getJoinColumn().add( joinColumn );
+				joinTable.getInverseJoinColumn().add( inverseJoinColumn );
+				if (! StringHelper.isEmpty( pluralAttribute.getTable() )) {
+					joinTable.setName( pluralAttribute.getTable() );
+				}
+				m2m.setJoinTable( joinTable );
+			}
+		}
 		return m2m;
 	}
 	
