@@ -23,7 +23,9 @@
  */
 package org.hibernate.metamodel.source.internal.jaxb.hbm;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 import javax.persistence.FetchType;
 import javax.xml.bind.JAXBElement;
@@ -36,7 +38,6 @@ import org.hibernate.metamodel.source.internal.jaxb.JaxbAttributes;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbBasic;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbCacheElement;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbCacheModeType;
-import org.hibernate.metamodel.source.internal.jaxb.JaxbCascadeType;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbColumn;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbDiscriminatorColumn;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbElementCollection;
@@ -73,8 +74,12 @@ import org.hibernate.metamodel.source.internal.jaxb.JaxbOneToMany;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbOneToOne;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbPersistenceUnitMetadata;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbQueryParamType;
+import org.hibernate.metamodel.source.internal.jaxb.JaxbSqlResultSetMapping;
+import org.hibernate.metamodel.source.internal.jaxb.JaxbSqlResultSetMappingEntityResult;
+import org.hibernate.metamodel.source.internal.jaxb.JaxbSqlResultSetMappingFieldResult;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbSynchronizeType;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbTable;
+import org.hibernate.metamodel.source.internal.jaxb.hbm.JaxbReturnPropertyElement.JaxbReturnColumn;
 import org.hibernate.metamodel.spi.ClassLoaderAccess;
 import org.hibernate.xml.spi.Origin;
 import org.jboss.logging.Logger;
@@ -236,12 +241,40 @@ public class HbmXmlTransformer {
 	}
 
 	private void transferResultSetMappings(JaxbHibernateMapping hbmXmlMapping, JaxbEntityMappings ormRoot) {
-		if ( hbmXmlMapping.getResultset().isEmpty() ) {
-			return;
+		for ( JaxbResultsetElement hbmResultSet : hbmXmlMapping.getResultset() ) {
+			final JaxbSqlResultSetMapping mapping = new JaxbSqlResultSetMapping();
+			mapping.setName( hbmResultSet.getName() );
+			
+			for (JaxbReturnElement hbmReturn : hbmResultSet.getReturn()) {
+				mapping.getEntityResult().add( transferReturnElement( hbmReturn ) );
+			}
+			// TODO: return-scalar
+			
+			ormRoot.getSqlResultSetMapping().add( mapping );
 		}
-
-		// todo : implement this; or decide to not support it in transformation
-		log.debugf( "skipping hbm.xml <resultset/> definitions" );
+	}
+	
+	private JaxbSqlResultSetMappingEntityResult transferReturnElement(JaxbReturnElement hbmReturn) {
+		
+		final JaxbSqlResultSetMappingEntityResult entityResult = new JaxbSqlResultSetMappingEntityResult();
+		entityResult.setEntityClass( getFqClassName( hbmReturn.getClazz() ) );
+		for (JaxbReturnPropertyElement returnProperty : hbmReturn.getReturnProperty()) {
+			final JaxbSqlResultSetMappingFieldResult field = new JaxbSqlResultSetMappingFieldResult();
+			final List<String> columns = new ArrayList<String>();
+			if (! StringHelper.isEmpty( returnProperty.getColumn() )) {
+				columns.add( returnProperty.getColumn() );
+			}
+			for (JaxbReturnColumn returnColumn : returnProperty.getReturnColumn()) {
+				columns.add( returnColumn.getName() );
+			}
+			if (columns.size() > 1) {
+				log.warn( "More than one column per <return-property> not supported." );
+			}
+			field.setColumn( columns.get( 0 ) );
+			field.setName( returnProperty.getName() );
+			entityResult.getFieldResult().add( field );
+		}
+		return entityResult;
 	}
 
 	private void transferFetchProfiles(JaxbHibernateMapping hbmXmlMapping, JaxbEntityMappings ormRoot) {
@@ -354,12 +387,23 @@ public class HbmXmlTransformer {
 			if ( String.class.isInstance( content ) ) {
 				query.setQuery( (String) content );
 			}
-			else {
-				final JaxbQueryParamElement hbmQueryParam = (JaxbQueryParamElement) content;
-				final JaxbQueryParamType queryParam = new JaxbQueryParamType();
-				query.getQueryParam().add( queryParam );
-				queryParam.setName( hbmQueryParam.getName() );
-				queryParam.setType( hbmQueryParam.getType() );
+			else if (content instanceof JAXBElement) {
+				final JAXBElement element = (JAXBElement) content;
+				if (element.getValue() instanceof JaxbQueryParamType) {
+					final JaxbQueryParamElement hbmQueryParam = (JaxbQueryParamElement) element.getValue();
+					final JaxbQueryParamType queryParam = new JaxbQueryParamType();
+					query.getQueryParam().add( queryParam );
+					queryParam.setName( hbmQueryParam.getName() );
+					queryParam.setType( hbmQueryParam.getType() );
+				}
+				else if (element.getValue() instanceof JaxbReturnElement) {
+					final JaxbSqlResultSetMapping mapping = new JaxbSqlResultSetMapping();
+					// TODO: correct to use the query name here?
+					mapping.setName( name );
+					mapping.getEntityResult().add( transferReturnElement( (JaxbReturnElement) element.getValue() ) );
+					ormRoot.getSqlResultSetMapping().add( mapping );
+				}
+				// TODO: return-scalar possible here?
 			}
 		}
 		
@@ -1188,13 +1232,16 @@ public class HbmXmlTransformer {
 		return FetchType.LAZY;
 	}
 	
-	private Class getClass(String className) {
+	private String getFqClassName(String className) {
 		final String defaultPackageName = ormRoot.getPackage();
 		if ( StringHelper.isNotEmpty( className ) && className.indexOf( '.' ) < 0 && StringHelper.isNotEmpty( defaultPackageName ) ) {
 			className = StringHelper.qualify( defaultPackageName, className );
 		}
-		
-		return classLoaderAccess.classForName( className );
+		return className;
+	}
+	
+	private Class getClass(String className) {
+		return classLoaderAccess.classForName( getFqClassName( className ) );
 	}
 	
 	private Class getPropertyType(String className, String propertyName) {
