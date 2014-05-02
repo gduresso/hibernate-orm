@@ -776,7 +776,7 @@ public class HbmXmlTransformer {
 						for ( JaxbColumnElement hbmColumn : keyManyToOne.getColumn() ) {
 							final JaxbJoinColumn joinColumn = new JaxbJoinColumn();
 							joinColumn.setName( hbmColumn.getName() );
-							joinColumn.setNullable( !hbmColumn.isNotNull() );
+							joinColumn.setNullable( hbmColumn.isNotNull() == null ? null : !hbmColumn.isNotNull() );
 							joinColumn.setUnique( hbmColumn.isUnique() );
 							manyToOne.getJoinColumn().add( joinColumn );
 						}
@@ -812,37 +812,7 @@ public class HbmXmlTransformer {
 				}
 				else {
 					final JaxbKeyManyToOneElement keyManyToOne = (JaxbKeyManyToOneElement) hbmCompositeAttribute;
-					final JaxbManyToOne manyToOne = new JaxbManyToOne();
-					manyToOne.setName( keyManyToOne.getName() );
-					manyToOne.setId( true );
-					manyToOne.setAttributeAccessor( keyManyToOne.getAccess() );
-					if ( StringHelper.isNotEmpty( keyManyToOne.getEntityName() ) ) {
-						manyToOne.setTargetEntity( keyManyToOne.getEntityName() );
-					}
-					else {
-						manyToOne.setTargetEntity( keyManyToOne.getClazz() );
-					}
-					// todo : cascade
-					// TODO: should this be "proxy", instead of "true"?
-					if ( keyManyToOne.getLazy() != null && "true".equals( keyManyToOne.getLazy().value() ) ) {
-						manyToOne.setFetch( FetchType.LAZY );
-					}
-					manyToOne.setForeignKey( new JaxbForeignKey() );
-					manyToOne.getForeignKey().setName( keyManyToOne.getForeignKey() );
-					if ( StringHelper.isNotEmpty( keyManyToOne.getColumnAttribute() ) ) {
-						final JaxbJoinColumn joinColumn = new JaxbJoinColumn();
-						joinColumn.setName( keyManyToOne.getColumnAttribute() );
-						manyToOne.getJoinColumn().add( joinColumn );
-					}
-					else {
-						for ( JaxbColumnElement hbmColumn : keyManyToOne.getColumn() ) {
-							final JaxbJoinColumn joinColumn = new JaxbJoinColumn();
-							joinColumn.setName( hbmColumn.getName() );
-							joinColumn.setNullable( !hbmColumn.isNotNull() );
-							joinColumn.setUnique( hbmColumn.isUnique() );
-							manyToOne.getJoinColumn().add( joinColumn );
-						}
-					}
+					final JaxbManyToOne manyToOne = transferManyToOneAttribute( keyManyToOne );
 					entity.getAttributes().getManyToOne().add( manyToOne );
 				}
 			}
@@ -989,7 +959,12 @@ public class HbmXmlTransformer {
 			o2o.getJoinColumn().add( joinColumn );
 		}
 		o2o.setName( hbmO2O.getName() );
-		o2o.setTargetEntity( hbmO2O.getEntityName() );
+		if ( StringHelper.isNotEmpty( hbmO2O.getEntityName() ) ) {
+			o2o.setTargetEntity( hbmO2O.getEntityName() );
+		}
+		else {
+			o2o.setTargetEntity( hbmO2O.getClazz() );
+		}
 		return o2o;
 	}
 
@@ -1006,21 +981,80 @@ public class HbmXmlTransformer {
 		m2o.setFetch( convert( hbmM2O.getFetch() ) );
 		m2o.setForeignKey( new JaxbForeignKey() );
 		m2o.getForeignKey().setName( hbmM2O.getForeignKey() );
-		final JaxbJoinColumn joinColumn = new JaxbJoinColumn();
-		if (StringHelper.isEmpty( hbmM2O.getColumnAttribute() )) {
-			// AbstractBasicBindingTests seems to imply this was the case
-			joinColumn.setName( hbmM2O.getName() );
+		if (hbmM2O.getColumn().isEmpty()) {
+			final JaxbJoinColumn joinColumn = new JaxbJoinColumn();
+			if (StringHelper.isEmpty( hbmM2O.getColumnAttribute() )) {
+				// AbstractBasicBindingTests seems to imply this was the case
+				joinColumn.setName( hbmM2O.getName() );
+			}
+			else {
+				joinColumn.setName( hbmM2O.getColumnAttribute() );
+			}
+			if (! StringHelper.isEmpty( hbmM2O.getPropertyRef() )) {
+				joinColumn.setReferencedColumnName( hbmM2O.getPropertyRef() );
+			}
+			joinColumn.setNullable( hbmM2O.isNotNull() == null ? null : !hbmM2O.isNotNull() );
+			joinColumn.setUnique( hbmM2O.isUnique() );
+			m2o.getJoinColumn().add( joinColumn );
 		}
 		else {
-			joinColumn.setName( hbmM2O.getColumnAttribute() );
+			for ( JaxbColumnElement hbmColumn : hbmM2O.getColumn() ) {
+				final JaxbJoinColumn joinColumn = new JaxbJoinColumn();
+				joinColumn.setName( hbmColumn.getName() );
+				joinColumn.setNullable( hbmColumn.isNotNull() == null ? null : !hbmColumn.isNotNull() );
+				joinColumn.setUnique( hbmColumn.isUnique() );
+				m2o.getJoinColumn().add( joinColumn );
+			}
 		}
-		if (! StringHelper.isEmpty( hbmM2O.getPropertyRef() )) {
-			joinColumn.setReferencedColumnName( hbmM2O.getPropertyRef() );
-		}
-		m2o.getJoinColumn().add( joinColumn );
 		m2o.setName( hbmM2O.getName() );
 		m2o.setOptional( hbmM2O.isNotNull() == null ? true : !hbmM2O.isNotNull() );
-		m2o.setTargetEntity( hbmM2O.getEntityName() );
+		if ( StringHelper.isNotEmpty( hbmM2O.getEntityName() ) ) {
+			m2o.setTargetEntity( hbmM2O.getEntityName() );
+		}
+		else {
+			m2o.setTargetEntity( hbmM2O.getClazz() );
+		}
+		return m2o;
+	}
+
+	// TODO: Duplicates a lot of the above
+	private JaxbManyToOne transferManyToOneAttribute(JaxbKeyManyToOneElement hbmM2O) {
+		final JaxbManyToOne m2o = new JaxbManyToOne();
+		m2o.setId( true );
+		m2o.setAttributeAccessor( hbmM2O.getAccess() );
+		// TODO: should this be "proxy", instead of "true"?
+		if ( hbmM2O.getLazy() != null && "true".equals( hbmM2O.getLazy().value() ) ) {
+			m2o.setFetch( FetchType.LAZY );
+		}
+		m2o.setForeignKey( new JaxbForeignKey() );
+		m2o.getForeignKey().setName( hbmM2O.getForeignKey() );
+		if (hbmM2O.getColumn().isEmpty()) {
+			final JaxbJoinColumn joinColumn = new JaxbJoinColumn();
+			if (StringHelper.isEmpty( hbmM2O.getColumnAttribute() )) {
+				// AbstractBasicBindingTests seems to imply this was the case
+				joinColumn.setName( hbmM2O.getName() );
+			}
+			else {
+				joinColumn.setName( hbmM2O.getColumnAttribute() );
+			}
+			m2o.getJoinColumn().add( joinColumn );
+		}
+		else {
+			for ( JaxbColumnElement hbmColumn : hbmM2O.getColumn() ) {
+				final JaxbJoinColumn joinColumn = new JaxbJoinColumn();
+				joinColumn.setName( hbmColumn.getName() );
+				joinColumn.setNullable( hbmColumn.isNotNull() == null ? null : !hbmColumn.isNotNull() );
+				joinColumn.setUnique( hbmColumn.isUnique() );
+				m2o.getJoinColumn().add( joinColumn );
+			}
+		}
+		m2o.setName( hbmM2O.getName() );
+		if ( StringHelper.isNotEmpty( hbmM2O.getEntityName() ) ) {
+			m2o.setTargetEntity( hbmM2O.getEntityName() );
+		}
+		else {
+			m2o.setTargetEntity( hbmM2O.getClazz() );
+		}
 		return m2o;
 	}
 
@@ -1138,12 +1172,23 @@ public class HbmXmlTransformer {
 		o2m.setInverse( pluralAttribute.isInverse() );
 		if (pluralAttribute.getKey() != null) {
 			final JaxbKeyElement hbmKey = pluralAttribute.getKey();
-			final String columnName = hbmKey.getColumnAttribute();
-			// TODO: handle other JaxbKeyElement props
-			final JaxbJoinColumn joinColumn = new JaxbJoinColumn();
-			joinColumn.setName( columnName );
-			// TODO: Handle other JaxbJoinColumn props
-			o2m.getJoinColumn().add( joinColumn );
+			if (hbmKey.getColumn().isEmpty()) {
+				final JaxbJoinColumn joinColumn = new JaxbJoinColumn();
+				joinColumn.setName( hbmKey.getColumnAttribute() );
+				if (! StringHelper.isEmpty( hbmKey.getPropertyRef() )) {
+					joinColumn.setReferencedColumnName( hbmKey.getPropertyRef() );
+				}
+				o2m.getJoinColumn().add( joinColumn );
+			}
+			else {
+				for ( JaxbColumnElement hbmColumn : hbmKey.getColumn() ) {
+					final JaxbJoinColumn joinColumn = new JaxbJoinColumn();
+					joinColumn.setName( hbmColumn.getName() );
+					joinColumn.setNullable( hbmColumn.isNotNull() == null ? null : !hbmColumn.isNotNull() );
+					joinColumn.setUnique( hbmColumn.isUnique() );
+					o2m.getJoinColumn().add( joinColumn );
+				}
+			}
 		}
 		return o2m;
 	}
