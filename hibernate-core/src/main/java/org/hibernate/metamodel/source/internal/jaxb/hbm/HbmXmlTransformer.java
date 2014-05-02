@@ -31,6 +31,7 @@ import javax.persistence.FetchType;
 import javax.xml.bind.JAXBElement;
 
 import org.hibernate.FlushMode;
+import org.hibernate.HibernateException;
 import org.hibernate.internal.util.ReflectHelper;
 import org.hibernate.internal.util.StringHelper;
 import org.hibernate.mapping.Collection;
@@ -93,8 +94,6 @@ import org.jboss.logging.Logger;
  * @author Brett Meyer
  */
 public class HbmXmlTransformer {
-	private static final Logger log = Logger.getLogger( HbmXmlTransformer.class );
-
 	/**
 	 * Singleton access
 	 */
@@ -270,7 +269,7 @@ public class HbmXmlTransformer {
 				columns.add( returnColumn.getName() );
 			}
 			if (columns.size() > 1) {
-				log.warn( "More than one column per <return-property> not supported." );
+				throw new HibernateException( "HBM transformation: More than one column per <return-property> not supported." );
 			}
 			field.setColumn( columns.get( 0 ) );
 			field.setName( returnProperty.getName() );
@@ -522,8 +521,7 @@ public class HbmXmlTransformer {
 		entity.setPersister( hbmClass.getPersister() );
 		if ( !hbmClass.getTuplizer().isEmpty() ) {
 			if ( hbmClass.getTuplizer().size() > 1 ) {
-				log.warn( "More than one entity-mode per entity not supported" );
-
+				throw new HibernateException( "HBM transformation: More than one entity-mode per entity not supported" );
 			}
 			final JaxbTuplizerElement tuplizerElement = hbmClass.getTuplizer().get( 0 );
 			entity.setEntityMode( tuplizerElement.getEntityMode().value() );
@@ -1073,25 +1071,17 @@ public class HbmXmlTransformer {
 
 	private void transferPrimitiveArrayAttributes(JaxbEntity entity, JaxbClassElement hbmClass) {
 		if ( !hbmClass.getPrimitiveArray().isEmpty() ) {
-			log.warnf(
-					"Entity mapping [%s : %s] from hbm.xml [%s]  used <primitive-array/> construct " +
-							"which is not supported in transformation; skipping",
-					hbmClass.getName(),
-					hbmClass.getEntityName(),
-					origin
-			);
+			throw new HibernateException( "HBM transformation: Entity mapping [" + hbmClass.getName() + " : "
+					+ hbmClass.getEntityName() + "] from hbm.xml [" + origin + "]  used <primitive-array/> construct " +
+							"which is not supported in transformation; skipping" );
 		}
 	}
 
 	private void transferPropertiesGrouping(JaxbEntity entity, JaxbClassElement hbmClass) {
 		if ( !hbmClass.getProperties().isEmpty() ) {
-			log.warnf(
-					"Entity mapping [%s : %s] from hbm.xml [%s]  used <properties/> construct " +
-							"which is not supported in transformation; skipping",
-					hbmClass.getName(),
-					hbmClass.getEntityName(),
-					origin
-			);
+			throw new HibernateException( "HBM transformation: Entity mapping [" + hbmClass.getName() + " : "
+					+ hbmClass.getEntityName() + "] from hbm.xml [" + origin + "]  used <properties/> construct " +
+							"which is not supported in transformation; skipping" );
 		}
 	}
 
