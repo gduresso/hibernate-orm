@@ -30,7 +30,6 @@ import org.hibernate.internal.util.StringHelper;
 import org.hibernate.metamodel.source.internal.annotations.util.HibernateDotNames;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbElementCollection;
 import org.hibernate.metamodel.source.internal.jaxb.PersistentAttribute;
-import org.hibernate.type.SetType;
 import org.jboss.jandex.AnnotationValue;
 import org.jboss.jandex.ClassInfo;
 
@@ -59,10 +58,7 @@ public class ElementCollectionMocker extends PropertyMocker {
 			);
 		}
 		if (elementCollection.getType() != null) {
-			// TODO: Move this to a helper?
-			List<AnnotationValue> typeAnnotationValueList = new ArrayList<AnnotationValue>();
-			MockHelper.stringValue( "type", elementCollection.getType().getName(), typeAnnotationValueList );
-			create( HibernateDotNames.TYPE, typeAnnotationValueList );
+			parseType(elementCollection.getType().getName(), getTarget());
 		}
 		if (elementCollection.getCollectionType() != null) {
 			// TODO: Move this to a helper?

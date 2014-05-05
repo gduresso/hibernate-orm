@@ -70,6 +70,7 @@ public class ManyToManyMocker extends PropertyMocker {
 		MockHelper.cascadeValue( "cascade", manyToMany.getCascade(), isDefaultCascadePersist(), annotationValueList );
 		create( MANY_TO_MANY, annotationValueList );
 		parseMapKeyClass( manyToMany.getMapKeyClass(), getTarget() );
+		parseMapKeyType( manyToMany.getMapKeyType(), getTarget() );
 		parseMapKeyTemporal( manyToMany.getMapKeyTemporal(), getTarget() );
 		parseMapKeyEnumerated( manyToMany.getMapKeyEnumerated(), getTarget() );
 		parseMapKey( manyToMany.getMapKey(), getTarget() );

@@ -31,7 +31,7 @@ import javax.persistence.FetchType;
 import javax.xml.bind.JAXBElement;
 
 import org.hibernate.FlushMode;
-import org.hibernate.HibernateException;
+import org.hibernate.MappingException;
 import org.hibernate.internal.util.ReflectHelper;
 import org.hibernate.internal.util.StringHelper;
 import org.hibernate.mapping.Collection;
@@ -70,6 +70,7 @@ import org.hibernate.metamodel.source.internal.jaxb.JaxbJoinColumn;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbJoinTable;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbManyToMany;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbManyToOne;
+import org.hibernate.metamodel.source.internal.jaxb.JaxbMapKeyColumn;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbNamedNativeQuery;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbNamedQuery;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbNaturalId;
@@ -82,6 +83,7 @@ import org.hibernate.metamodel.source.internal.jaxb.JaxbSqlResultSetMappingEntit
 import org.hibernate.metamodel.source.internal.jaxb.JaxbSqlResultSetMappingFieldResult;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbSynchronizeType;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbTable;
+import org.hibernate.metamodel.source.internal.jaxb.MapAttribute;
 import org.hibernate.metamodel.source.internal.jaxb.hbm.JaxbReturnPropertyElement.JaxbReturnColumn;
 import org.hibernate.metamodel.spi.ClassLoaderAccess;
 import org.hibernate.xml.spi.Origin;
@@ -268,7 +270,7 @@ public class HbmXmlTransformer {
 				columns.add( returnColumn.getName() );
 			}
 			if (columns.size() > 1) {
-				throw new HibernateException( "HBM transformation: More than one column per <return-property> not supported." );
+				throw new MappingException( "HBM transformation: More than one column per <return-property> not supported." );
 			}
 			field.setColumn( columns.get( 0 ) );
 			field.setName( returnProperty.getName() );
@@ -520,7 +522,7 @@ public class HbmXmlTransformer {
 		entity.setPersister( hbmClass.getPersister() );
 		if ( !hbmClass.getTuplizer().isEmpty() ) {
 			if ( hbmClass.getTuplizer().size() > 1 ) {
-				throw new HibernateException( "HBM transformation: More than one entity-mode per entity not supported" );
+				throw new MappingException( "HBM transformation: More than one entity-mode per entity not supported" );
 			}
 			final JaxbTuplizerElement tuplizerElement = hbmClass.getTuplizer().get( 0 );
 			entity.setEntityMode( tuplizerElement.getEntityMode().value() );
@@ -1070,7 +1072,7 @@ public class HbmXmlTransformer {
 
 	private void transferPrimitiveArrayAttributes(JaxbEntity entity, JaxbClassElement hbmClass) {
 		if ( !hbmClass.getPrimitiveArray().isEmpty() ) {
-			throw new HibernateException( "HBM transformation: Entity mapping [" + hbmClass.getName() + " : "
+			throw new MappingException( "HBM transformation: Entity mapping [" + hbmClass.getName() + " : "
 					+ hbmClass.getEntityName() + "] from hbm.xml [" + origin + "]  used <primitive-array/> construct " +
 							"which is not supported in transformation; skipping" );
 		}
@@ -1078,7 +1080,7 @@ public class HbmXmlTransformer {
 
 	private void transferPropertiesGrouping(JaxbEntity entity, JaxbClassElement hbmClass) {
 		if ( !hbmClass.getProperties().isEmpty() ) {
-			throw new HibernateException( "HBM transformation: Entity mapping [" + hbmClass.getName() + " : "
+			throw new MappingException( "HBM transformation: Entity mapping [" + hbmClass.getName() + " : "
 					+ hbmClass.getEntityName() + "] from hbm.xml [" + origin + "]  used <properties/> construct " +
 							"which is not supported in transformation; skipping" );
 		}
@@ -1110,7 +1112,7 @@ public class HbmXmlTransformer {
 		}
 		
 		for (JaxbMapElement hbmMap : hbmClass.getMap()) {
-			transferPluralAttribute( entity, hbmMap, "map" );
+			transferMapAttribute( entity, hbmMap );
 		}
 	}
 	
@@ -1127,6 +1129,52 @@ public class HbmXmlTransformer {
 		if (pluralAttribute.getManyToMany() != null) {
 			entity.getAttributes().getManyToMany().add( transferManyToManyAttribute(
 					pluralAttribute, collectionTypeName ) );
+		}
+	}
+	
+	private void transferMapAttribute(JaxbEntity entity, JaxbMapElement pluralAttribute) {
+		if (pluralAttribute.getElement() != null) {
+			entity.getAttributes().getElementCollection().add( transferElementCollection(
+					pluralAttribute.getName(), "map", pluralAttribute.getElement() ) );
+		}
+		if (pluralAttribute.getOneToMany() != null) {
+			final JaxbOneToMany o2m = transferOneToManyAttribute( pluralAttribute, "map" );
+			transferMapKey( o2m, pluralAttribute );
+			entity.getAttributes().getOneToMany().add( o2m );
+		}
+		if (pluralAttribute.getManyToMany() != null) {
+			final JaxbManyToMany m2m = transferManyToManyAttribute( pluralAttribute, "map" );
+			transferMapKey( m2m, pluralAttribute );
+			entity.getAttributes().getManyToMany().add( m2m );
+		}
+	}
+	
+	private void transferMapKey(MapAttribute map, JaxbMapElement pluralAttribute) {
+		if (pluralAttribute.getIndex() != null) {
+			final JaxbMapKeyColumn mapKey = new JaxbMapKeyColumn();
+			// TODO: multiple columns?
+			mapKey.setName( pluralAttribute.getIndex().getColumnAttribute() );
+			map.setMapKeyColumn( mapKey );
+			if ( ! StringHelper.isEmpty( pluralAttribute.getIndex().getType() ) ) {
+				final JaxbHbmType type = new JaxbHbmType();
+				type.setName( pluralAttribute.getIndex().getType() );
+				map.setMapKeyType( type );
+			}
+		}
+		if (pluralAttribute.getMapKey() != null) {
+			if (! StringHelper.isEmpty( pluralAttribute.getMapKey().getFormulaAttribute() )) {
+				throw new MappingException( "HBM transformation: Formulas within map keys are not supported." );
+			}
+			final JaxbMapKeyColumn mapKey = new JaxbMapKeyColumn();
+			// TODO: multiple columns?
+			mapKey.setName( pluralAttribute.getMapKey().getColumnAttribute() );
+			map.setMapKeyColumn( mapKey );
+			// TODO: #getType w/ attributes?
+			if ( ! StringHelper.isEmpty( pluralAttribute.getMapKey().getTypeAttribute() ) ) {
+				final JaxbHbmType type = new JaxbHbmType();
+				type.setName( pluralAttribute.getMapKey().getTypeAttribute() );
+				map.setMapKeyType( type );
+			}
 		}
 	}
 	
@@ -1182,7 +1230,8 @@ public class HbmXmlTransformer {
 		return o2m;
 	}
 
-	private JaxbManyToMany transferManyToManyAttribute(PluralAttributeElement pluralAttribute, String collectionTypeName) {
+	private JaxbManyToMany transferManyToManyAttribute(PluralAttributeElement pluralAttribute,
+			String collectionTypeName) {
 		final JaxbManyToManyElement hbmM2M = pluralAttribute.getManyToMany();
 		final JaxbManyToMany m2m = new JaxbManyToMany();
 		final JaxbHbmType collectionType = new JaxbHbmType();
@@ -1230,6 +1279,7 @@ public class HbmXmlTransformer {
 				m2m.setJoinTable( joinTable );
 			}
 		}
+		
 		return m2m;
 	}
 	

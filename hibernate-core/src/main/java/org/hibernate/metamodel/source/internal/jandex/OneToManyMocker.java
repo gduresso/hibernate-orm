@@ -74,6 +74,7 @@ public class OneToManyMocker extends PropertyMocker {
 		parseMapKey( oneToMany.getMapKey(), getTarget() );
 		parseMapKeyColumn( oneToMany.getMapKeyColumn(), getTarget() );
 		parseMapKeyClass( oneToMany.getMapKeyClass(), getTarget() );
+		parseMapKeyType( oneToMany.getMapKeyType(), getTarget() );
 		parseMapKeyTemporal( oneToMany.getMapKeyTemporal(), getTarget() );
 		parseMapKeyEnumerated( oneToMany.getMapKeyEnumerated(), getTarget() );
 		parseJoinColumnList( oneToMany.getJoinColumn(), getTarget() );
