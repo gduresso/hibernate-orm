@@ -51,12 +51,12 @@ import org.hibernate.metamodel.source.internal.jaxb.JaxbEmptyType;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbEntity;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbEntityMappings;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbForeignKey;
-import org.hibernate.metamodel.source.internal.jaxb.JaxbGeneratedValue;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbHbmCascadeType;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbHbmCustomSql;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbHbmCustomSqlCheckEnum;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbHbmFetchProfile;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbHbmFilterDef;
+import org.hibernate.metamodel.source.internal.jaxb.JaxbHbmIdGenerator;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbHbmIdGeneratorDef;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbHbmLoader;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbHbmMultiTenancy;
@@ -85,7 +85,6 @@ import org.hibernate.metamodel.source.internal.jaxb.JaxbTable;
 import org.hibernate.metamodel.source.internal.jaxb.hbm.JaxbReturnPropertyElement.JaxbReturnColumn;
 import org.hibernate.metamodel.spi.ClassLoaderAccess;
 import org.hibernate.xml.spi.Origin;
-import org.jboss.logging.Logger;
 
 /**
  * Transforms a JAXB binding of a hbm.xml file into a unified orm.xml representation
@@ -660,9 +659,15 @@ public class HbmXmlTransformer {
 			id.setAttributeAccessor( hbmId.getAccess() );
 			
 			if (hbmId.getGenerator() != null) {
-				final JaxbGeneratedValue generator = new JaxbGeneratedValue();
-				generator.setGenerator( hbmId.getGenerator().getClazz() );
-				id.setGeneratedValue( generator );
+				final JaxbHbmIdGenerator generator = new JaxbHbmIdGenerator();
+				generator.setStrategy( hbmId.getGenerator().getClazz() );
+				for (JaxbParamElement param : hbmId.getGenerator().getParam()) {
+					JaxbHbmParam hbmParam = new JaxbHbmParam();
+					hbmParam.setName( param.getName() );
+					hbmParam.setValue( param.getValue() );
+					generator.getParam().add( hbmParam );
+				}
+				id.setGenerator( generator );
 			}
 			
 			if ( StringHelper.isNotEmpty( hbmId.getTypeAttribute() ) ) {
@@ -759,10 +764,7 @@ public class HbmXmlTransformer {
 						manyToOne.setTargetEntity( keyManyToOne.getClazz() );
 					}
 					// todo : cascade
-					// TODO: should this check "proxy" instead?
-					if ( keyManyToOne.getLazy() != null && "true".equals( keyManyToOne.getLazy().value() ) ) {
-						manyToOne.setFetch( FetchType.LAZY );
-					}
+					manyToOne.setFetch( convert( keyManyToOne.getLazy() ) );
 					manyToOne.setForeignKey( new JaxbForeignKey() );
 					manyToOne.getForeignKey().setName( keyManyToOne.getForeignKey() );
 					if ( StringHelper.isNotEmpty( keyManyToOne.getColumnAttribute() ) ) {
@@ -1020,10 +1022,7 @@ public class HbmXmlTransformer {
 		final JaxbManyToOne m2o = new JaxbManyToOne();
 		m2o.setId( true );
 		m2o.setAttributeAccessor( hbmM2O.getAccess() );
-		// TODO: should this be "proxy", instead of "true"?
-		if ( hbmM2O.getLazy() != null && "true".equals( hbmM2O.getLazy().value() ) ) {
-			m2o.setFetch( FetchType.LAZY );
-		}
+		m2o.setFetch( convert( hbmM2O.getLazy() ) );
 		m2o.setForeignKey( new JaxbForeignKey() );
 		m2o.getForeignKey().setName( hbmM2O.getForeignKey() );
 		if (hbmM2O.getColumn().isEmpty()) {
@@ -1288,8 +1287,7 @@ public class HbmXmlTransformer {
 					return FetchType.LAZY;
 			}
 		}
-		// TODO: EAGER or LAZY?
-		return FetchType.LAZY;
+		return null;
 	}
 	
 	private FetchType convert(JaxbFetchAttributeWithSubselect hbmFetch) {
@@ -1301,8 +1299,20 @@ public class HbmXmlTransformer {
 					return FetchType.LAZY;
 			}
 		}
-		// TODO: EAGER or LAZY?
-		return FetchType.LAZY;
+		return null;
+	}
+	
+	private FetchType convert(JaxbLazyAttribute hbmLazy) {
+		// TODO: no-proxy?
+		if ( hbmLazy != null && "proxy".equalsIgnoreCase( hbmLazy.value() ) ) {
+			return FetchType.LAZY;
+		}
+		else if ( hbmLazy != null && "false".equalsIgnoreCase( hbmLazy.value() ) ) {
+			return FetchType.EAGER;
+		}
+		else {
+			return null;
+		}
 	}
 	
 	private String getFqClassName(String className) {

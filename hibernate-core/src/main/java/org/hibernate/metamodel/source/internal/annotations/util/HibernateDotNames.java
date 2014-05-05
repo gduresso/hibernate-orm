@@ -29,6 +29,7 @@ import org.hibernate.annotations.AnyMetaDefs;
 import org.hibernate.annotations.AttributeAccessor;
 import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.Cache;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.hibernate.annotations.CacheModeType;
 import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.Check;
@@ -123,6 +124,7 @@ public interface HibernateDotNames {
 	DotName ATTRIBUTE_ACCESSOR = DotName.createSimple( AttributeAccessor.class.getName() );
 	DotName BATCH_SIZE = DotName.createSimple( BatchSize.class.getName() );
 	DotName CACHE = DotName.createSimple( Cache.class.getName() );
+	DotName CACHE_CONCURRENCY_STRATEGY = DotName.createSimple( CacheConcurrencyStrategy.class.getName() );
 	DotName CACHE_MODE_TYPE = DotName.createSimple( CacheModeType.class.getName() );
 	DotName CASCADE = DotName.createSimple( Cascade.class.getName() );
 	DotName CHECK = DotName.createSimple( Check.class.getName() );
