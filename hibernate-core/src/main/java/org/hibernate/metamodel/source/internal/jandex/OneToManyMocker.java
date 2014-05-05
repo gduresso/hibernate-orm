@@ -80,6 +80,7 @@ public class OneToManyMocker extends PropertyMocker {
 		parseJoinColumnList( oneToMany.getJoinColumn(), getTarget() );
 		parseOrderColumn( oneToMany.getOrderColumn(), getTarget() );
 		parseJoinTable( oneToMany.getJoinTable(), getTarget() );
+		parseOnDelete( oneToMany.getOnDelete(), getTarget() );
 		if ( oneToMany.getOrderBy() != null ) {
 			create( ORDER_BY, getTarget(), MockHelper.stringValueArray( "value", oneToMany.getOrderBy() ) );
 		}

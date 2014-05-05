@@ -40,6 +40,7 @@ import org.hibernate.metamodel.source.internal.jaxb.JaxbAttributes;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbBasic;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbCacheElement;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbCacheModeType;
+import org.hibernate.metamodel.source.internal.jaxb.JaxbCascadeType;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbColumn;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbDiscriminatorColumn;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbElementCollection;
@@ -74,6 +75,7 @@ import org.hibernate.metamodel.source.internal.jaxb.JaxbMapKeyColumn;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbNamedNativeQuery;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbNamedQuery;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbNaturalId;
+import org.hibernate.metamodel.source.internal.jaxb.JaxbOnDeleteType;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbOneToMany;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbOneToOne;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbOrderColumn;
@@ -758,33 +760,7 @@ public class HbmXmlTransformer {
 				}
 				else {
 					final JaxbKeyManyToOneElement keyManyToOne = (JaxbKeyManyToOneElement) hbmCompositeAttribute;
-					final JaxbManyToOne manyToOne = new JaxbManyToOne();
-					manyToOne.setName( keyManyToOne.getName() );
-					manyToOne.setAttributeAccessor( keyManyToOne.getAccess() );
-					if ( StringHelper.isNotEmpty( keyManyToOne.getEntityName() ) ) {
-						manyToOne.setTargetEntity( keyManyToOne.getEntityName() );
-					}
-					else {
-						manyToOne.setTargetEntity( keyManyToOne.getClazz() );
-					}
-					// todo : cascade
-					manyToOne.setFetch( convert( keyManyToOne.getLazy() ) );
-					manyToOne.setForeignKey( new JaxbForeignKey() );
-					manyToOne.getForeignKey().setName( keyManyToOne.getForeignKey() );
-					if ( StringHelper.isNotEmpty( keyManyToOne.getColumnAttribute() ) ) {
-						final JaxbJoinColumn joinColumn = new JaxbJoinColumn();
-						joinColumn.setName( keyManyToOne.getColumnAttribute() );
-						manyToOne.getJoinColumn().add( joinColumn );
-					}
-					else {
-						for ( JaxbColumnElement hbmColumn : keyManyToOne.getColumn() ) {
-							final JaxbJoinColumn joinColumn = new JaxbJoinColumn();
-							joinColumn.setName( hbmColumn.getName() );
-							joinColumn.setNullable( hbmColumn.isNotNull() == null ? null : !hbmColumn.isNotNull() );
-							joinColumn.setUnique( hbmColumn.isUnique() );
-							manyToOne.getJoinColumn().add( joinColumn );
-						}
-					}
+					final JaxbManyToOne manyToOne = transferManyToOneAttribute( keyManyToOne );
 					embeddable.getAttributes().getManyToOne().add( manyToOne );
 				}
 			}
@@ -1056,6 +1032,9 @@ public class HbmXmlTransformer {
 		else {
 			m2o.setTargetEntity( hbmM2O.getClazz() );
 		}
+		if (hbmM2O.getOnDelete() != null) {
+			m2o.setOnDelete( convert( hbmM2O.getOnDelete() ) );
+		}
 		return m2o;
 	}
 
@@ -1256,6 +1235,9 @@ public class HbmXmlTransformer {
 					o2m.getJoinColumn().add( joinColumn );
 				}
 			}
+			if (hbmKey.getOnDelete() != null) {
+				o2m.setOnDelete( convert( hbmKey.getOnDelete() ) );
+			}
 		}
 		return o2m;
 	}
@@ -1392,6 +1374,15 @@ public class HbmXmlTransformer {
 		}
 		else {
 			return null;
+		}
+	}
+	
+	private JaxbOnDeleteType convert(JaxbOnDeleteAttribute hbmOnDelete) {
+		switch (hbmOnDelete) {
+			case CASCADE:
+				return JaxbOnDeleteType.CASCADE;
+			default:
+				return JaxbOnDeleteType.NO_ACTION;
 		}
 	}
 	

@@ -59,6 +59,7 @@ public class ManyToOneMocker extends PropertyMocker {
 		create( MANY_TO_ONE, annotationValueList );
 		parseJoinColumnList( manyToOne.getJoinColumn(), getTarget() );
 		parseJoinTable( manyToOne.getJoinTable(), getTarget() );
+		parseOnDelete( manyToOne.getOnDelete(), getTarget() );
 		if ( manyToOne.getMapsId() != null ) {
 			create( MAPS_ID, MockHelper.stringValueArray( "value", manyToOne.getMapsId() ) );
 		}
