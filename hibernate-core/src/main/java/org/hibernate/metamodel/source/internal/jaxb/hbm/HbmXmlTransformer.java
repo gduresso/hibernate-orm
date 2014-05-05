@@ -76,6 +76,7 @@ import org.hibernate.metamodel.source.internal.jaxb.JaxbNamedQuery;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbNaturalId;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbOneToMany;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbOneToOne;
+import org.hibernate.metamodel.source.internal.jaxb.JaxbOrderColumn;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbPersistenceUnitMetadata;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbQueryParamType;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbSqlResultSetMapping;
@@ -83,7 +84,8 @@ import org.hibernate.metamodel.source.internal.jaxb.JaxbSqlResultSetMappingEntit
 import org.hibernate.metamodel.source.internal.jaxb.JaxbSqlResultSetMappingFieldResult;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbSynchronizeType;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbTable;
-import org.hibernate.metamodel.source.internal.jaxb.MapAttribute;
+import org.hibernate.metamodel.source.internal.jaxb.CollectionAttribute;
+import org.hibernate.metamodel.source.internal.jaxb.PersistentAttribute;
 import org.hibernate.metamodel.source.internal.jaxb.hbm.JaxbReturnPropertyElement.JaxbReturnColumn;
 import org.hibernate.metamodel.spi.ClassLoaderAccess;
 import org.hibernate.xml.spi.Origin;
@@ -649,7 +651,7 @@ public class HbmXmlTransformer {
 		transferPrimitiveArrayAttributes( entity, hbmClass );
 		transferPropertiesGrouping( entity, hbmClass );
 		transferNaturalIdentifiers( entity, hbmClass );
-		transferPluralAttribute( entity, hbmClass );
+		transferPluralAttributes( entity, hbmClass );
 	}
 
 	private void transferIdentifier(JaxbEntity entity, JaxbClassElement hbmClass) {
@@ -1098,7 +1100,7 @@ public class HbmXmlTransformer {
 		// todo : implement
 	}
 	
-	private void transferPluralAttribute(JaxbEntity entity, JaxbClassElement hbmClass) {
+	private void transferPluralAttributes(JaxbEntity entity, JaxbClassElement hbmClass) {
 		for (JaxbSetElement hbmSet : hbmClass.getSet()) {
 			transferPluralAttribute( entity, hbmSet, "set" );
 		}
@@ -1108,7 +1110,7 @@ public class HbmXmlTransformer {
 		}
 		
 		for (JaxbListElement hbmList : hbmClass.getList()) {
-			transferPluralAttribute( entity, hbmList, "list" );
+			transferListAttribute( entity, hbmList );
 		}
 		
 		for (JaxbMapElement hbmMap : hbmClass.getMap()) {
@@ -1132,10 +1134,38 @@ public class HbmXmlTransformer {
 		}
 	}
 	
-	private void transferMapAttribute(JaxbEntity entity, JaxbMapElement pluralAttribute) {
+	private void transferListAttribute(JaxbEntity entity, JaxbListElement pluralAttribute) {
 		if (pluralAttribute.getElement() != null) {
 			entity.getAttributes().getElementCollection().add( transferElementCollection(
-					pluralAttribute.getName(), "map", pluralAttribute.getElement() ) );
+					pluralAttribute.getName(), "list", pluralAttribute.getElement() ) );
+		}
+		if (pluralAttribute.getOneToMany() != null) {
+			final JaxbOneToMany o2m = transferOneToManyAttribute( pluralAttribute, "list" );
+			transferListIndex( o2m, pluralAttribute );
+			entity.getAttributes().getOneToMany().add( o2m );
+		}
+		if (pluralAttribute.getManyToMany() != null) {
+			final JaxbManyToMany m2m = transferManyToManyAttribute( pluralAttribute, "list" );
+			transferListIndex( m2m, pluralAttribute );
+			entity.getAttributes().getManyToMany().add( m2m );
+		}
+	}
+	
+	private void transferListIndex(CollectionAttribute list, JaxbListElement pluralAttribute) {
+		if (pluralAttribute.getListIndex() != null) {
+			final JaxbOrderColumn orderColumn = new JaxbOrderColumn();
+			// TODO: multiple columns?
+			orderColumn.setName( pluralAttribute.getListIndex().getColumnAttribute() );
+			list.setOrderColumn( orderColumn );
+		}
+	}
+	
+	private void transferMapAttribute(JaxbEntity entity, JaxbMapElement pluralAttribute) {
+		if (pluralAttribute.getElement() != null) {
+			final JaxbElementCollection collection = transferElementCollection(
+					pluralAttribute.getName(), "map", pluralAttribute.getElement() );
+			transferMapKey( collection, pluralAttribute );
+			entity.getAttributes().getElementCollection().add( collection );
 		}
 		if (pluralAttribute.getOneToMany() != null) {
 			final JaxbOneToMany o2m = transferOneToManyAttribute( pluralAttribute, "map" );
@@ -1149,7 +1179,7 @@ public class HbmXmlTransformer {
 		}
 	}
 	
-	private void transferMapKey(MapAttribute map, JaxbMapElement pluralAttribute) {
+	private void transferMapKey(CollectionAttribute map, JaxbMapElement pluralAttribute) {
 		if (pluralAttribute.getIndex() != null) {
 			final JaxbMapKeyColumn mapKey = new JaxbMapKeyColumn();
 			// TODO: multiple columns?
