@@ -89,6 +89,7 @@ import org.hibernate.metamodel.source.internal.jaxb.JaxbSqlResultSetMappingEntit
 import org.hibernate.metamodel.source.internal.jaxb.JaxbSqlResultSetMappingFieldResult;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbSynchronizeType;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbTable;
+import org.hibernate.metamodel.source.internal.jaxb.JaxbVersion;
 import org.hibernate.metamodel.source.internal.jaxb.hbm.JaxbReturnPropertyElement.JaxbReturnColumn;
 import org.hibernate.metamodel.spi.ClassLoaderAccess;
 import org.hibernate.xml.spi.Origin;
@@ -524,14 +525,6 @@ public class HbmXmlTransformer {
 		}
 
 		entity.setOptimisticLock( hbmClass.getOptimisticLock().value() );
-		if ( hbmClass.getOptimisticLock() == JaxbOptimisticLockAttribute.VERSION ) {
-			// todo : transfer version/timestamp
-			//final JaxbVersionElement hbmVersion = hbmClass.getVersion();
-			//final JaxbTimestampElement hbmTimestamp = hbmClass.getTimestamp();
-
-			// oddly the jpa xsd allows multiple <version/> elements :?
-		}
-
 
 		transferDiscriminator( entity, hbmClass );
 		entity.setDiscriminatorValue( hbmClass.getDiscriminatorValue() );
@@ -663,6 +656,7 @@ public class HbmXmlTransformer {
 
 		transferIdentifier( entity, hbmClass );
 		transferNaturalIdentifiers( entity, hbmClass );
+		transferVersions( entity, hbmClass );
 	}
 
 	private void transferEntityElementAttributes(JaxbEntity entity, EntityElement hbmClass) {
@@ -849,6 +843,26 @@ public class HbmXmlTransformer {
 		// TODO: hbmClass.getNaturalId().getDynamicComponent?
 		naturalId.setMutable( hbmClass.getNaturalId().isMutable() );
 		entity.getAttributes().setNaturalId( naturalId );
+	}
+	
+	private void transferVersions(JaxbEntity entity, JaxbClassElement hbmClass) {
+		if ( hbmClass.getOptimisticLock() == JaxbOptimisticLockAttribute.VERSION ) {
+			final JaxbVersionElement hbmVersion = hbmClass.getVersion();
+			if (hbmVersion != null) {
+				final JaxbVersion version = new JaxbVersion();
+				version.setName( hbmVersion.getName() );
+				// TODO: multiple columns?
+				if (! StringHelper.isEmpty( hbmVersion.getColumnAttribute() )) {
+					version.setColumn( new JaxbColumn() );
+					version.getColumn().setName( hbmVersion.getColumnAttribute() );
+				}
+				entity.getAttributes().getVersion().add( version );
+			}
+			// TODO
+//			final JaxbTimestampElement hbmTimestamp = hbmClass.getTimestamp();
+
+			// oddly the jpa xsd allows multiple <version/> elements?
+		}
 	}
 
 	private JaxbBasic transferBasicAttribute(JaxbPropertyElement hbmProp) {
