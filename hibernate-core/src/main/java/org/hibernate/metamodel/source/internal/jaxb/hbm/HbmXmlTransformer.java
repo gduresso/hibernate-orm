@@ -67,6 +67,8 @@ import org.hibernate.metamodel.source.internal.jaxb.JaxbHbmType;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbHbmTypeDef;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbId;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbIdClass;
+import org.hibernate.metamodel.source.internal.jaxb.JaxbInheritance;
+import org.hibernate.metamodel.source.internal.jaxb.JaxbInheritanceType;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbJoinColumn;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbJoinTable;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbManyToMany;
@@ -80,6 +82,7 @@ import org.hibernate.metamodel.source.internal.jaxb.JaxbOneToMany;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbOneToOne;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbOrderColumn;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbPersistenceUnitMetadata;
+import org.hibernate.metamodel.source.internal.jaxb.JaxbPrimaryKeyJoinColumn;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbQueryParamType;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbSqlResultSetMapping;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbSqlResultSetMappingEntityResult;
@@ -467,15 +470,9 @@ public class HbmXmlTransformer {
 	}
 
 	private void transferEntity(JaxbClassElement hbmClass, JaxbEntity entity) {
-		entity.setMetadataComplete( true );
-		entity.setName( hbmClass.getEntityName() );
-		entity.setClazz( hbmClass.getName() );
-		entity.setAbstract( hbmClass.isAbstract() );
+		transferEntityElement( hbmClass, entity );
+		
 		entity.setMutable( hbmClass.isMutable() );
-		entity.setLazy( hbmClass.isLazy() );
-		entity.setProxy( hbmClass.getProxy() );
-
-		entity.setBatchSize( hbmClass.getBatchSize() );
 
 		entity.setTable( new JaxbTable() );
 		entity.getTable().setCatalog( hbmClass.getCatalog() );
@@ -491,10 +488,6 @@ public class HbmXmlTransformer {
 				entity.getSynchronize().add( sync );
 			}
 		}
-
-		entity.setDynamicInsert( hbmClass.isDynamicInsert() );
-		entity.setDynamicUpdate( hbmClass.isDynamicUpdate() );
-		entity.setSelectBeforeUpdate( hbmClass.isSelectBeforeUpdate() );
 
 		if ( hbmClass.getLoader() != null ) {
 			entity.setLoader( new JaxbHbmLoader() );
@@ -521,7 +514,6 @@ public class HbmXmlTransformer {
 		entity.setRowid( hbmClass.getRowid() );
 		entity.setWhere( hbmClass.getWhere() );
 
-		entity.setPersister( hbmClass.getPersister() );
 		if ( !hbmClass.getTuplizer().isEmpty() ) {
 			if ( hbmClass.getTuplizer().size() > 1 ) {
 				throw new MappingException( "HBM transformation: More than one entity-mode per entity not supported" );
@@ -582,6 +574,34 @@ public class HbmXmlTransformer {
 		// todo : transfer fetch-profiles
 
 		transferAttributes( entity, hbmClass );
+		
+		if (! hbmClass.getJoinedSubclass().isEmpty()) {
+			for (JaxbJoinedSubclassElement hbmSubclass : hbmClass.getJoinedSubclass()) {
+				entity.setInheritance( new JaxbInheritance() );
+				entity.getInheritance().setStrategy( JaxbInheritanceType.JOINED );
+				
+				final JaxbEntity subclassEntity = new JaxbEntity();
+				ormRoot.getEntity().add( subclassEntity );
+				transferJoinedSubclass( hbmSubclass, subclassEntity );
+			}
+		}
+	}
+
+	private void transferEntityElement(JaxbEntityElement hbmClass, JaxbEntity entity) {
+		entity.setMetadataComplete( true );
+		entity.setName( hbmClass.getEntityName() );
+		entity.setClazz( hbmClass.getName() );
+		entity.setAbstract( hbmClass.isAbstract() );
+		entity.setLazy( hbmClass.isLazy() );
+		entity.setProxy( hbmClass.getProxy() );
+
+		entity.setBatchSize( hbmClass.getBatchSize() );
+
+		entity.setDynamicInsert( hbmClass.isDynamicInsert() );
+		entity.setDynamicUpdate( hbmClass.isDynamicUpdate() );
+		entity.setSelectBeforeUpdate( hbmClass.isSelectBeforeUpdate() );
+
+		entity.setPersister( hbmClass.getPersister() );
 	}
 
 	private JaxbHbmCustomSqlCheckEnum convert(JaxbCheckAttribute check) {
@@ -639,9 +659,15 @@ public class HbmXmlTransformer {
 	}
 
 	private void transferAttributes(JaxbEntity entity, JaxbClassElement hbmClass) {
-		entity.setAttributes( new JaxbAttributes() );
+		transferEntityElementAttributes( entity, hbmClass );
 
 		transferIdentifier( entity, hbmClass );
+		transferNaturalIdentifiers( entity, hbmClass );
+	}
+
+	private void transferEntityElementAttributes(JaxbEntity entity, EntityElement hbmClass) {
+		entity.setAttributes( new JaxbAttributes() );
+
 		transferBasicAttributes( entity, hbmClass );
 		transferEmbeddedAttributes( entity, hbmClass );
 		transferOneToOneAttributes( entity, hbmClass );
@@ -650,7 +676,6 @@ public class HbmXmlTransformer {
 		transferManyToAnyAttributes( entity, hbmClass );
 		transferPrimitiveArrayAttributes( entity, hbmClass );
 		transferPropertiesGrouping( entity, hbmClass );
-		transferNaturalIdentifiers( entity, hbmClass );
 		transferPluralAttributes( entity, hbmClass );
 	}
 
@@ -797,7 +822,7 @@ public class HbmXmlTransformer {
 		}
 	}
 
-	private void transferBasicAttributes(JaxbEntity entity, JaxbClassElement hbmClass) {
+	private void transferBasicAttributes(JaxbEntity entity, EntityElement hbmClass) {
 		for ( JaxbPropertyElement hbmProp : hbmClass.getProperty() ) {
 			entity.getAttributes().getBasic().add( transferBasicAttribute( hbmProp ) );
 		}
@@ -877,7 +902,7 @@ public class HbmXmlTransformer {
 		return basic;
 	}
 
-	private void transferEmbeddedAttributes(JaxbEntity entity, JaxbClassElement hbmClass) {
+	private void transferEmbeddedAttributes(JaxbEntity entity, EntityElement hbmClass) {
 		for (JaxbComponentElement hbmComponent : hbmClass.getComponent()) {
 			entity.getAttributes().getEmbedded().add( transferEmbeddedAttribute( hbmComponent ) );
 			ormRoot.getEmbeddable().add( transferEmbeddable( entity, hbmComponent ) );
@@ -917,7 +942,7 @@ public class HbmXmlTransformer {
 		return embedded;
 	}
 
-	private void transferOneToOneAttributes(JaxbEntity entity, JaxbClassElement hbmClass) {
+	private void transferOneToOneAttributes(JaxbEntity entity, EntityElement hbmClass) {
 		for (JaxbOneToOneElement hbmO2O : hbmClass.getOneToOne()) {
 			entity.getAttributes().getOneToOne().add( transferOneToOneAttribute( hbmO2O ) );
 		}
@@ -950,7 +975,7 @@ public class HbmXmlTransformer {
 		return o2o;
 	}
 
-	private void transferManyToOneAttributes(JaxbEntity entity, JaxbClassElement hbmClass) {
+	private void transferManyToOneAttributes(JaxbEntity entity, EntityElement hbmClass) {
 		for (JaxbManyToOneElement hbmM2O : hbmClass.getManyToOne()) {
 			entity.getAttributes().getManyToOne().add( transferManyToOneAttribute( hbmM2O ) );
 		}
@@ -1043,7 +1068,7 @@ public class HbmXmlTransformer {
 		return m2o;
 	}
 
-	private void transferAnyAttributes(JaxbEntity entity, JaxbClassElement hbmClass) {
+	private void transferAnyAttributes(JaxbEntity entity, EntityElement hbmClass) {
 
 	}
 
@@ -1052,11 +1077,11 @@ public class HbmXmlTransformer {
 		return new JaxbAny();
 	}
 
-	private void transferManyToAnyAttributes(JaxbEntity entity, JaxbClassElement hbmClass) {
+	private void transferManyToAnyAttributes(JaxbEntity entity, EntityElement hbmClass) {
 
 	}
 
-	private void transferPrimitiveArrayAttributes(JaxbEntity entity, JaxbClassElement hbmClass) {
+	private void transferPrimitiveArrayAttributes(JaxbEntity entity, EntityElement hbmClass) {
 		if ( !hbmClass.getPrimitiveArray().isEmpty() ) {
 			throw new MappingException( "HBM transformation: Entity mapping [" + hbmClass.getName() + " : "
 					+ hbmClass.getEntityName() + "] from hbm.xml [" + origin + "]  used <primitive-array/> construct " +
@@ -1064,7 +1089,7 @@ public class HbmXmlTransformer {
 		}
 	}
 
-	private void transferPropertiesGrouping(JaxbEntity entity, JaxbClassElement hbmClass) {
+	private void transferPropertiesGrouping(JaxbEntity entity, EntityElement hbmClass) {
 		if ( !hbmClass.getProperties().isEmpty() ) {
 			throw new MappingException( "HBM transformation: Entity mapping [" + hbmClass.getName() + " : "
 					+ hbmClass.getEntityName() + "] from hbm.xml [" + origin + "]  used <properties/> construct " +
@@ -1076,15 +1101,22 @@ public class HbmXmlTransformer {
 		// todo : implement
 	}
 
-	private void transferJoinedSubclass(JaxbJoinedSubclassElement hbmSubclass, JaxbEntity entity) {
-		// todo : implement
+	private void transferJoinedSubclass(JaxbJoinedSubclassElement hbmSubclass, JaxbEntity subclassEntity) {
+		transferEntityElement( hbmSubclass, subclassEntity );
+		if (hbmSubclass.getKey() != null) {
+			final JaxbPrimaryKeyJoinColumn joinColumn = new JaxbPrimaryKeyJoinColumn();
+			// TODO: multiple columns?
+			joinColumn.setName( hbmSubclass.getKey().getColumnAttribute() );
+			subclassEntity.getPrimaryKeyJoinColumn().add( joinColumn );
+		}
+		transferEntityElementAttributes( subclassEntity, hbmSubclass );
 	}
 
 	private void transferUnionSubclass(JaxbUnionSubclassElement hbmSubclass, JaxbEntity entity) {
 		// todo : implement
 	}
 	
-	private void transferPluralAttributes(JaxbEntity entity, JaxbClassElement hbmClass) {
+	private void transferPluralAttributes(JaxbEntity entity, EntityElement hbmClass) {
 		for (JaxbSetElement hbmSet : hbmClass.getSet()) {
 			transferPluralAttribute( entity, hbmSet, "set" );
 		}
