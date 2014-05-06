@@ -578,6 +578,14 @@ public class HbmXmlTransformer {
 				transferJoinedSubclass( hbmSubclass, subclassEntity );
 			}
 		}
+		
+		if (! hbmClass.getSubclass().isEmpty()) {
+			for (JaxbSubclassElement hbmSubclass : hbmClass.getSubclass()) {
+				final JaxbEntity subclassEntity = new JaxbEntity();
+				ormRoot.getEntity().add( subclassEntity );
+				transferDiscriminatorSubclass( hbmSubclass, subclassEntity );
+			}
+		}
 	}
 
 	private void transferEntityElement(JaxbEntityElement hbmClass, JaxbEntity entity) {
@@ -595,6 +603,25 @@ public class HbmXmlTransformer {
 		entity.setSelectBeforeUpdate( hbmClass.isSelectBeforeUpdate() );
 
 		entity.setPersister( hbmClass.getPersister() );
+	}
+
+	private void transferDiscriminatorSubclass(JaxbSubclassElement hbmSubclass, JaxbEntity subclassEntity) {
+		transferEntityElement( hbmSubclass, subclassEntity );
+		if (! StringHelper.isEmpty( hbmSubclass.getDiscriminatorValue() )) {
+			subclassEntity.setDiscriminatorValue( hbmSubclass.getDiscriminatorValue() );
+		}
+		transferEntityElementAttributes( subclassEntity, hbmSubclass );
+	}
+
+	private void transferJoinedSubclass(JaxbJoinedSubclassElement hbmSubclass, JaxbEntity subclassEntity) {
+		transferEntityElement( hbmSubclass, subclassEntity );
+		if (hbmSubclass.getKey() != null) {
+			final JaxbPrimaryKeyJoinColumn joinColumn = new JaxbPrimaryKeyJoinColumn();
+			// TODO: multiple columns?
+			joinColumn.setName( hbmSubclass.getKey().getColumnAttribute() );
+			subclassEntity.getPrimaryKeyJoinColumn().add( joinColumn );
+		}
+		transferEntityElementAttributes( subclassEntity, hbmSubclass );
 	}
 
 	private JaxbHbmCustomSqlCheckEnum convert(JaxbCheckAttribute check) {
@@ -1111,21 +1138,6 @@ public class HbmXmlTransformer {
 		}
 	}
 
-	private void transferDiscriminatorSubclass(JaxbSubclassElement hbmSubclass, JaxbEntity entity) {
-		// todo : implement
-	}
-
-	private void transferJoinedSubclass(JaxbJoinedSubclassElement hbmSubclass, JaxbEntity subclassEntity) {
-		transferEntityElement( hbmSubclass, subclassEntity );
-		if (hbmSubclass.getKey() != null) {
-			final JaxbPrimaryKeyJoinColumn joinColumn = new JaxbPrimaryKeyJoinColumn();
-			// TODO: multiple columns?
-			joinColumn.setName( hbmSubclass.getKey().getColumnAttribute() );
-			subclassEntity.getPrimaryKeyJoinColumn().add( joinColumn );
-		}
-		transferEntityElementAttributes( subclassEntity, hbmSubclass );
-	}
-
 	private void transferUnionSubclass(JaxbUnionSubclassElement hbmSubclass, JaxbEntity entity) {
 		// todo : implement
 	}
@@ -1403,7 +1415,7 @@ public class HbmXmlTransformer {
 					return FetchType.LAZY;
 			}
 		}
-		return null;
+		return FetchType.LAZY;
 	}
 	
 	private FetchType convert(JaxbFetchAttributeWithSubselect hbmFetch) {
@@ -1415,19 +1427,20 @@ public class HbmXmlTransformer {
 					return FetchType.LAZY;
 			}
 		}
-		return null;
+		return FetchType.LAZY;
 	}
 	
 	private FetchType convert(JaxbLazyAttribute hbmLazy) {
 		// TODO: no-proxy?
-		if ( hbmLazy != null && "proxy".equalsIgnoreCase( hbmLazy.value() ) ) {
+		if ( hbmLazy != null || "proxy".equalsIgnoreCase( hbmLazy.value() ) ) {
 			return FetchType.LAZY;
 		}
 		else if ( hbmLazy != null && "false".equalsIgnoreCase( hbmLazy.value() ) ) {
 			return FetchType.EAGER;
 		}
 		else {
-			return null;
+			// proxy is HBM default
+			return FetchType.LAZY;
 		}
 	}
 	
