@@ -35,12 +35,12 @@ import org.hibernate.MappingException;
 import org.hibernate.internal.util.ReflectHelper;
 import org.hibernate.internal.util.StringHelper;
 import org.hibernate.mapping.Collection;
+import org.hibernate.metamodel.source.internal.jaxb.CollectionAttribute;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbAny;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbAttributes;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbBasic;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbCacheElement;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbCacheModeType;
-import org.hibernate.metamodel.source.internal.jaxb.JaxbCascadeType;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbColumn;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbDiscriminatorColumn;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbElementCollection;
@@ -86,8 +86,6 @@ import org.hibernate.metamodel.source.internal.jaxb.JaxbSqlResultSetMappingEntit
 import org.hibernate.metamodel.source.internal.jaxb.JaxbSqlResultSetMappingFieldResult;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbSynchronizeType;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbTable;
-import org.hibernate.metamodel.source.internal.jaxb.CollectionAttribute;
-import org.hibernate.metamodel.source.internal.jaxb.PersistentAttribute;
 import org.hibernate.metamodel.source.internal.jaxb.hbm.JaxbReturnPropertyElement.JaxbReturnColumn;
 import org.hibernate.metamodel.spi.ClassLoaderAccess;
 import org.hibernate.xml.spi.Origin;
@@ -926,6 +924,10 @@ public class HbmXmlTransformer {
 	}
 
 	private JaxbOneToOne transferOneToOneAttribute(JaxbOneToOneElement hbmO2O) {
+		if (!hbmO2O.getFormula().isEmpty() || !StringHelper.isEmpty( hbmO2O.getFormulaAttribute() )) {
+			throw new MappingException( "HBM transformation: Formulas within one-to-ones are not yet supported." );
+		}
+		
 		final JaxbOneToOne o2o = new JaxbOneToOne();
 		o2o.setAttributeAccessor( hbmO2O.getAccess() );
 		o2o.setHbmCascade( convertCascadeType( hbmO2O.getCascade() ) );
@@ -955,6 +957,9 @@ public class HbmXmlTransformer {
 	}
 
 	private JaxbManyToOne transferManyToOneAttribute(JaxbManyToOneElement hbmM2O) {
+		if (!hbmM2O.getFormula().isEmpty() || !StringHelper.isEmpty( hbmM2O.getFormulaAttribute() )) {
+			throw new MappingException( "HBM transformation: Formulas within many-to-ones are not yet supported." );
+		}
 		final JaxbManyToOne m2o = new JaxbManyToOne();
 		m2o.setAttributeAccessor( hbmM2O.getAccess() );
 		m2o.setHbmCascade( convertCascadeType( hbmM2O.getCascade() ) );
@@ -1172,7 +1177,7 @@ public class HbmXmlTransformer {
 		}
 		if (pluralAttribute.getMapKey() != null) {
 			if (! StringHelper.isEmpty( pluralAttribute.getMapKey().getFormulaAttribute() )) {
-				throw new MappingException( "HBM transformation: Formulas within map keys are not supported." );
+				throw new MappingException( "HBM transformation: Formulas within map keys are not yet supported." );
 			}
 			final JaxbMapKeyColumn mapKey = new JaxbMapKeyColumn();
 			// TODO: multiple columns?
@@ -1245,6 +1250,9 @@ public class HbmXmlTransformer {
 	private JaxbManyToMany transferManyToManyAttribute(PluralAttributeElement pluralAttribute,
 			String collectionTypeName) {
 		final JaxbManyToManyElement hbmM2M = pluralAttribute.getManyToMany();
+		if (!hbmM2M.getFormula().isEmpty() || !StringHelper.isEmpty( hbmM2M.getFormulaAttribute() )) {
+			throw new MappingException( "HBM transformation: Formulas within many-to-manys are not yet supported." );
+		}
 		final JaxbManyToMany m2m = new JaxbManyToMany();
 		final JaxbHbmType collectionType = new JaxbHbmType();
 		collectionType.setName( collectionTypeName );

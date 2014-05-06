@@ -33,8 +33,8 @@ import org.hibernate.loader.plan.spi.EntityReturn;
 import org.hibernate.loader.plan.spi.FetchSource;
 import org.hibernate.loader.plan.spi.LoadPlan;
 import org.hibernate.persister.entity.OuterJoinLoadable;
-
 import org.hibernate.testing.FailureExpectedWithNewMetamodel;
+import org.hibernate.testing.FailureExpectedWithNewUnifiedXsd;
 import org.hibernate.testing.junit4.BaseUnitTestCase;
 import org.hibernate.test.annotations.Country;
 import org.hibernate.test.annotations.cid.keymanytoone.Card;
@@ -82,6 +82,7 @@ public class LoadPlanStructureAssertionTest extends BaseUnitTestCase {
 	}
 
 	@Test
+	@FailureExpectedWithNewUnifiedXsd(message = "formulas not yet supported in associations")
 	public void testSpecialOneToOne() {
 		// tests the mappings defined in org.hibernate.test.onetoone.joined.JoinedSubclassOneToOneTest
 
