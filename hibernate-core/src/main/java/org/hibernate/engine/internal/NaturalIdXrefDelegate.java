@@ -243,7 +243,7 @@ public class NaturalIdXrefDelegate {
 		}
 
 		// Session cache miss, see if second-level caching is enabled
-		if ( !persister.hasNaturalIdCache() ) {
+		if ( !session().getCacheMode().isDisabled() || !persister.hasNaturalIdCache() ) {
 			return null;
 		}
 

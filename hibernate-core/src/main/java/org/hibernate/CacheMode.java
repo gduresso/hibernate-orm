@@ -77,4 +77,9 @@ public enum CacheMode {
 	public boolean isPutEnabled() {
 		return isPutEnabled;
 	}
+	
+	// Mainly exists so that StatelessSession can disable natural id caching.
+	public boolean isDisabled() {
+		return !isPutEnabled && !isGetEnabled;
+	}
 }
