@@ -1837,7 +1837,7 @@ public class StatefulPersistenceContext implements PersistenceContext {
 			// 'put' stats incrementing.
 			boolean justAddedLocally = naturalIdXrefDelegate.cacheNaturalIdCrossReference( persister, id, naturalIdValues );
 
-			if ( justAddedLocally && persister.hasNaturalIdCache() ) {
+			if ( justAddedLocally && session.getCacheMode().isPutEnabled() && persister.hasNaturalIdCache() ) {
 				managedSharedCacheEntries( persister, id, naturalIdValues, null, CachedNaturalIdValueSource.LOAD );
 			}
 		}
