@@ -33,7 +33,7 @@ import javax.persistence.TemporalType;
  *
  * @author Brett Meyer
  */
-public interface CollectionAttribute {
+public interface CollectionAttribute extends FetchableAttribute {
 
     public String getOrderBy();
 

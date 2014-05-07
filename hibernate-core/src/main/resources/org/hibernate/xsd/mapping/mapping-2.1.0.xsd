@@ -716,6 +716,7 @@
         <xsd:attribute name="name" type="xsd:string" use="required"/>
         <xsd:attribute name="target-class" type="xsd:string"/>
         <xsd:attribute name="fetch" type="orm:fetch-type"/>
+        <xsd:attribute name="hbm-fetch-mode" type="orm:hbm-fetch-mode"/>
         <xsd:attribute name="access" type="orm:access-type"/>
         <xsd:attribute name="attribute-accessor" type="xsd:string" />
     </xsd:complexType>
@@ -1034,6 +1035,22 @@
         <xsd:restriction base="xsd:token">
             <xsd:enumeration value="LAZY"/>
             <xsd:enumeration value="EAGER"/>
+        </xsd:restriction>
+    </xsd:simpleType>
+
+
+    <!-- **************************************************** -->
+
+    <xsd:simpleType name="hbm-fetch-mode">
+        <xsd:annotation>
+            <xsd:documentation>
+                org.hibernate.annotations.FetchMode enum values
+            </xsd:documentation>
+        </xsd:annotation>
+        <xsd:restriction base="xsd:token">
+            <xsd:enumeration value="SELECT"/>
+            <xsd:enumeration value="JOIN"/>
+            <xsd:enumeration value="SUBSELECT"/>
         </xsd:restriction>
     </xsd:simpleType>
 
@@ -1371,11 +1388,12 @@
         <xsd:attribute name="name" type="xsd:string" use="required"/>
         <xsd:attribute name="target-entity" type="xsd:string"/>
         <xsd:attribute name="fetch" type="orm:fetch-type"/>
+        <xsd:attribute name="hbm-fetch-mode" type="orm:hbm-fetch-mode"/>
         <xsd:attribute name="access" type="orm:access-type"/>
         <xsd:attribute name="attribute-accessor" type="xsd:string" />
         <xsd:attribute name="mapped-by" type="xsd:string"/>
         <xsd:attribute name="inverse" type="xsd:boolean"/> <!-- DEPRECATED -->
-        <xsd:attribute name="hbmKey" type="xsd:string"/> <!-- DEPRECATED (needed to carry the inverse side's <key> -->
+        <xsd:attribute name="hbm-key" type="xsd:string"/> <!-- DEPRECATED (needed to carry the inverse side's <key> -->
     </xsd:complexType>
 
 
@@ -1406,6 +1424,7 @@
         <xsd:attribute name="name" type="xsd:string" use="required"/>
         <xsd:attribute name="target-entity" type="xsd:string"/>
         <xsd:attribute name="fetch" type="orm:fetch-type"/>
+        <xsd:attribute name="hbm-fetch-mode" type="orm:hbm-fetch-mode"/>
         <xsd:attribute name="optional" type="xsd:boolean"/>
         <xsd:attribute name="access" type="orm:access-type"/>
         <xsd:attribute name="attribute-accessor" type="xsd:string" />
@@ -1758,6 +1777,7 @@
         <xsd:attribute name="name" type="xsd:string" use="required"/>
         <xsd:attribute name="target-entity" type="xsd:string"/>
         <xsd:attribute name="fetch" type="orm:fetch-type"/>
+        <xsd:attribute name="hbm-fetch-mode" type="orm:hbm-fetch-mode"/>
         <xsd:attribute name="access" type="orm:access-type"/>
         <xsd:attribute name="attribute-accessor" type="xsd:string" />
         <xsd:attribute name="mapped-by" type="xsd:string"/>
@@ -1794,6 +1814,7 @@
         <xsd:attribute name="name" type="xsd:string" use="required"/>
         <xsd:attribute name="target-entity" type="xsd:string"/>
         <xsd:attribute name="fetch" type="orm:fetch-type"/>
+        <xsd:attribute name="hbm-fetch-mode" type="orm:hbm-fetch-mode"/>
         <xsd:attribute name="optional" type="xsd:boolean"/>
         <xsd:attribute name="access" type="orm:access-type"/>
         <xsd:attribute name="attribute-accessor" type="xsd:string" />

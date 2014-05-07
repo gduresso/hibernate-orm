@@ -32,10 +32,12 @@ import javax.xml.bind.JAXBElement;
 
 import org.hibernate.FlushMode;
 import org.hibernate.MappingException;
+import org.hibernate.annotations.FetchMode;
 import org.hibernate.internal.util.ReflectHelper;
 import org.hibernate.internal.util.StringHelper;
 import org.hibernate.mapping.Collection;
 import org.hibernate.metamodel.source.internal.jaxb.CollectionAttribute;
+import org.hibernate.metamodel.source.internal.jaxb.FetchableAttribute;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbAny;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbAttributes;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbBasic;
@@ -998,7 +1000,6 @@ public class HbmXmlTransformer {
 		o2o.setAttributeAccessor( hbmO2O.getAccess() );
 		o2o.setHbmCascade( convertCascadeType( hbmO2O.getCascade() ) );
 		o2o.setOrphanRemoval( isOrphanRemoval( hbmO2O.getCascade() ) );
-		o2o.setFetch( convert( hbmO2O.getFetch() ) );
 		o2o.setForeignKey( new JaxbForeignKey() );
 		o2o.getForeignKey().setName( hbmO2O.getForeignKey() );
 		if (! StringHelper.isEmpty( hbmO2O.getPropertyRef() )) {
@@ -1013,6 +1014,9 @@ public class HbmXmlTransformer {
 		else {
 			o2o.setTargetEntity( hbmO2O.getClazz() );
 		}
+
+		transferFetchable( hbmO2O.getLazy(), hbmO2O.getFetch(), hbmO2O.getOuterJoin(), hbmO2O.isConstrained(), o2o );
+		
 		return o2o;
 	}
 
@@ -1029,7 +1033,6 @@ public class HbmXmlTransformer {
 		final JaxbManyToOne m2o = new JaxbManyToOne();
 		m2o.setAttributeAccessor( hbmM2O.getAccess() );
 		m2o.setHbmCascade( convertCascadeType( hbmM2O.getCascade() ) );
-		m2o.setFetch( convert( hbmM2O.getFetch() ) );
 		m2o.setForeignKey( new JaxbForeignKey() );
 		m2o.getForeignKey().setName( hbmM2O.getForeignKey() );
 		if (hbmM2O.getColumn().isEmpty()) {
@@ -1065,6 +1068,9 @@ public class HbmXmlTransformer {
 		else {
 			m2o.setTargetEntity( hbmM2O.getClazz() );
 		}
+
+		transferFetchable( hbmM2O.getLazy(), hbmM2O.getFetch(), hbmM2O.getOuterJoin(), null, m2o );
+		
 		return m2o;
 	}
 
@@ -1275,7 +1281,7 @@ public class HbmXmlTransformer {
 		o2m.setAttributeAccessor( pluralAttribute.getAccess() );
 		o2m.setHbmCascade( convertCascadeType( pluralAttribute.getCascade() ) );
 		o2m.setOrphanRemoval( isOrphanRemoval( pluralAttribute.getCascade() ) );
-		o2m.setFetch( convert( pluralAttribute.getFetch() ) );
+		transferFetchable( pluralAttribute.getLazy(), pluralAttribute.getFetch(), pluralAttribute.getOuterJoin(), o2m );
 		o2m.setName( pluralAttribute.getName() );
 		o2m.setTargetEntity( hbmO2M.getClazz() );
 		o2m.setInverse( pluralAttribute.isInverse() );
@@ -1317,7 +1323,7 @@ public class HbmXmlTransformer {
 		m2m.setCollectionType( collectionType );
 		m2m.setAttributeAccessor( pluralAttribute.getAccess() );
 		m2m.setHbmCascade( convertCascadeType( pluralAttribute.getCascade() ) );
-		m2m.setFetch( convert( pluralAttribute.getFetch() ) );
+		transferFetchable( pluralAttribute.getLazy(), pluralAttribute.getFetch(), pluralAttribute.getOuterJoin(), m2m );
 		m2m.setName( pluralAttribute.getName() );
 		m2m.setTargetEntity( hbmM2M.getClazz() );
 		m2m.setOrderBy( hbmM2M.getOrderBy() );
@@ -1406,30 +1412,89 @@ public class HbmXmlTransformer {
 		return false;
 	}
 	
-	private FetchType convert(JaxbFetchStyleAttribute hbmFetch) {
-		if (hbmFetch != null) {
-			switch (hbmFetch) {
-				case JOIN:
-					return FetchType.EAGER;
-				case SELECT:
-					return FetchType.LAZY;
+	// ToOne
+	// TODO: Not very confident -- some logic is pulled from HbmBinder, but seems off.
+	private void transferFetchable(JaxbLazyAttributeWithNoProxy hbmLazy, JaxbFetchStyleAttribute hbmFetch,
+			JaxbOuterJoinAttribute hbmOuterJoin, Boolean constrained, FetchableAttribute fetchable) {
+		FetchType laziness = FetchType.LAZY;
+		FetchMode fetch = FetchMode.SELECT;
+		
+		if (constrained != null && ! constrained) {
+			// NOTE SPECIAL CASE: one-to-one constrained=false cannot be proxied, so default to join and non-lazy
+			laziness = FetchType.EAGER;
+			fetch = FetchMode.JOIN;
+		}
+		else {
+			if (hbmFetch == null) {
+				if (hbmOuterJoin == null) {
+					if (hbmLazy != null) {
+						if (hbmLazy.equals( JaxbLazyAttributeWithNoProxy.FALSE )) {
+							laziness = FetchType.EAGER;
+						}
+						else if (hbmLazy.equals( JaxbLazyAttributeWithNoProxy.NO_PROXY )) {
+							// TODO: @LazyToOne(LazyToOneOption.PROXY) or @LazyToOne(LazyToOneOption.NO_PROXY)
+						}
+					}
+				}
+				else {
+					if (hbmOuterJoin.equals( JaxbOuterJoinAttribute.TRUE )) {
+						laziness = FetchType.EAGER;
+						fetch = FetchMode.JOIN;
+					}
+				}
+			}
+			else {
+				if (hbmFetch.equals( JaxbFetchStyleAttribute.JOIN )) {
+					laziness = FetchType.EAGER;
+					fetch = FetchMode.JOIN;
+				}
 			}
 		}
-		return FetchType.LAZY;
+		
+		fetchable.setFetch( laziness );
+		fetchable.setHbmFetchMode( fetch );
 	}
 	
-	private FetchType convert(JaxbFetchAttributeWithSubselect hbmFetch) {
-		if (hbmFetch != null) {
-			switch (hbmFetch) {
-				case JOIN:
-					return FetchType.EAGER;
-				case SELECT:
-					return FetchType.LAZY;
+	// ToMany
+	// TODO: Not very confident -- some logic is pulled from HbmBinder, but seems off.
+	private void transferFetchable(JaxbLazyAttributeWithExtra hbmLazy, JaxbFetchAttributeWithSubselect hbmFetch,
+			JaxbOuterJoinAttribute hbmOuterJoin, FetchableAttribute fetchable) {
+		FetchType laziness = FetchType.LAZY;
+		FetchMode fetch = FetchMode.SELECT;
+		
+		if (hbmFetch == null) {
+			if (hbmOuterJoin == null) {
+				if (hbmLazy != null) {
+					if (hbmLazy.equals( JaxbLazyAttributeWithExtra.FALSE )) {
+						laziness = FetchType.EAGER;
+					}
+					else if (hbmLazy.equals( JaxbLazyAttributeWithExtra.EXTRA )) {
+						// TODO
+					}
+				}
+			}
+			else {
+				if (hbmOuterJoin.equals( JaxbOuterJoinAttribute.TRUE )) {
+					laziness = FetchType.EAGER;
+					fetch = FetchMode.JOIN;
+				}
 			}
 		}
-		return FetchType.LAZY;
+		else {
+			if (hbmFetch.equals( JaxbFetchAttributeWithSubselect.JOIN )) {
+				laziness = FetchType.EAGER;
+				fetch = FetchMode.JOIN;
+			}
+			else if (hbmFetch.equals( JaxbFetchAttributeWithSubselect.SUBSELECT )) {
+				// TODO
+			}
+		}
+		
+		fetchable.setFetch( laziness );
+		fetchable.setHbmFetchMode( fetch );
 	}
 	
+	// KeyManyToOne
 	private FetchType convert(JaxbLazyAttribute hbmLazy) {
 		// TODO: no-proxy?
 		if ( hbmLazy != null || "proxy".equalsIgnoreCase( hbmLazy.value() ) ) {
