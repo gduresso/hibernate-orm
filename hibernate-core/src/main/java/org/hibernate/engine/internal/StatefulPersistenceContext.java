@@ -1824,7 +1824,7 @@ public class StatefulPersistenceContext implements PersistenceContext {
 				EntityPersister persister,
 				Serializable id,
 				Object[] naturalIdValues) {
-			if ( !persister.hasNaturalIdentifier() ) {
+			if ( !session.getCacheMode().isDisabled() || !persister.hasNaturalIdentifier() ) {
 				// nothing to do
 				return;
 			}
@@ -1873,7 +1873,7 @@ public class StatefulPersistenceContext implements PersistenceContext {
 				return;
 			}
 
-			if ( !persister.hasNaturalIdCache() ) {
+			if ( !session.getCacheMode().isDisabled() || !persister.hasNaturalIdCache() ) {
 				// nothing to do
 				return;
 			}
