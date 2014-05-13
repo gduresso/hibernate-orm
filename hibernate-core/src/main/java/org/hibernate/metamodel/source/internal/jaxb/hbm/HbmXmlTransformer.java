@@ -701,6 +701,7 @@ public class HbmXmlTransformer {
 		transferIdentifier( entity, hbmClass );
 		transferNaturalIdentifiers( entity, hbmClass );
 		transferVersions( entity, hbmClass );
+		transferJoins( entity, hbmClass );
 	}
 
 	private void transferEntityElementAttributes(JaxbEntity entity, EntityElement hbmClass) {
@@ -906,6 +907,13 @@ public class HbmXmlTransformer {
 //			final JaxbTimestampElement hbmTimestamp = hbmClass.getTimestamp();
 
 			// oddly the jpa xsd allows multiple <version/> elements?
+		}
+	}
+	
+	private void transferJoins(JaxbEntity entity, JaxbClassElement hbmClass) {
+		for ( JaxbJoinElement hbmJoin : hbmClass.getJoin() ) {
+			// TODO
+			throw new MappingException( "HBM transformation: HBM joins are not yet supported." );
 		}
 	}
 
