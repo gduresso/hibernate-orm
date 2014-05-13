@@ -2370,6 +2370,7 @@
 
         <xsd:attribute name="name" use="required" type="xsd:string"/>
         <xsd:attribute name="autoAliasInjection" type="xsd:boolean"/>
+        <xsd:attribute name="conditionAttribute" type="xsd:string"/>
     </xsd:complexType>
 
 

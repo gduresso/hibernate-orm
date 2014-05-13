@@ -23,6 +23,7 @@
  */
 package org.hibernate.metamodel.source.internal.jaxb.hbm;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -58,6 +59,7 @@ import org.hibernate.metamodel.source.internal.jaxb.JaxbHbmCascadeType;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbHbmCustomSql;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbHbmCustomSqlCheckEnum;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbHbmFetchProfile;
+import org.hibernate.metamodel.source.internal.jaxb.JaxbHbmFilter;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbHbmFilterDef;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbHbmIdGenerator;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbHbmIdGeneratorDef;
@@ -206,8 +208,12 @@ public class HbmXmlTransformer {
 			boolean foundCondition = false;
 			for ( Object content : hbmFilterDef.getContent() ) {
 				if ( String.class.isInstance( content ) ) {
-					foundCondition = true;
-					filterDef.setCondition( (String) content );
+					String condition = (String) content;
+					condition = condition.trim();
+					if (! StringHelper.isEmpty( condition )) {
+						foundCondition = true;
+						filterDef.setCondition( condition );
+					}
 				}
 				else {
 					JaxbFilterParamElement hbmFilterParam = ( (JAXBElement<JaxbFilterParamElement>) content ).getValue();
@@ -337,7 +343,9 @@ public class HbmXmlTransformer {
 		// JaxbQueryElement#content elements can be either the query or parameters
 		for ( Object content : hbmQuery.getContent() ) {
 			if ( String.class.isInstance( content ) ) {
-				query.setQuery( (String) content );
+				String s = (String) content;
+				s = s.trim();
+				query.setQuery( s );
 			}
 			else {
 				final JaxbQueryParamElement hbmQueryParam = (JaxbQueryParamElement) content;
@@ -395,7 +403,9 @@ public class HbmXmlTransformer {
 		// JaxbQueryElement#content elements can be either the query or parameters
 		for ( Object content : hbmQuery.getContent() ) {
 			if ( String.class.isInstance( content ) ) {
-				query.setQuery( (String) content );
+				String s = (String) content;
+				s = s.trim();
+				query.setQuery( s );
 			}
 			else if (content instanceof JAXBElement) {
 				final JAXBElement element = (JAXBElement) content;
@@ -564,8 +574,13 @@ public class HbmXmlTransformer {
 				entity.getNamedNativeQuery().add( convert( hbmQuery, entity.getName() + "." + hbmQuery.getName() ) );
 			}
 		}
-
-		// todo : transfer filters
+		
+		if (! hbmClass.getFilter().isEmpty()) {
+			for (JaxbFilterElement hbmFilter : hbmClass.getFilter()) {
+				entity.getFilter().add( convert( hbmFilter ) );
+			}
+		}
+		
 		// todo : transfer fetch-profiles
 
 		transferAttributes( entity, hbmClass );
@@ -699,7 +714,7 @@ public class HbmXmlTransformer {
 		transferManyToAnyAttributes( entity, hbmClass );
 		transferPrimitiveArrayAttributes( entity, hbmClass );
 		transferPropertiesGrouping( entity, hbmClass );
-		transferPluralAttributes( entity, hbmClass );
+		transferCollectionAttributes( entity, hbmClass );
 	}
 
 	private void transferIdentifier(JaxbEntity entity, JaxbClassElement hbmClass) {
@@ -1148,55 +1163,54 @@ public class HbmXmlTransformer {
 		// todo : implement
 	}
 	
-	private void transferPluralAttributes(JaxbEntity entity, EntityElement hbmClass) {
+	private void transferCollectionAttributes(JaxbEntity entity, EntityElement hbmClass) {
 		for (JaxbSetElement hbmSet : hbmClass.getSet()) {
-			transferPluralAttribute( entity, hbmSet, "set" );
+			transferCollectionAttribute( entity, hbmSet, "set" );
 		}
 		
 		for (JaxbBagElement hbmBag : hbmClass.getBag()) {
-			transferPluralAttribute( entity, hbmBag, "bag" );
+			transferCollectionAttribute( entity, hbmBag, "bag" );
 		}
 		
 		for (JaxbListElement hbmList : hbmClass.getList()) {
-			transferListAttribute( entity, hbmList );
+			final CollectionAttribute list = transferCollectionAttribute( entity, hbmList, "list" );
+			transferListIndex( list, hbmList );
 		}
 		
 		for (JaxbMapElement hbmMap : hbmClass.getMap()) {
-			transferMapAttribute( entity, hbmMap );
+			final CollectionAttribute map = transferCollectionAttribute( entity, hbmMap, "map" );
+			transferMapKey( map, hbmMap );
 		}
 	}
 	
-	private void transferPluralAttribute(JaxbEntity entity, PluralAttributeElement pluralAttribute,
+	private CollectionAttribute transferCollectionAttribute(JaxbEntity entity, PluralAttributeElement pluralAttribute,
 			String collectionTypeName) {
+		CollectionAttribute collection = null;
 		if (pluralAttribute.getElement() != null) {
-			entity.getAttributes().getElementCollection().add( transferElementCollection(
-					pluralAttribute.getName(), collectionTypeName, pluralAttribute.getElement() ) );
+			final JaxbElementCollection elementCollection = transferElementCollection(
+					pluralAttribute.getName(), collectionTypeName, pluralAttribute.getElement() );
+			entity.getAttributes().getElementCollection().add( elementCollection );
+			collection = elementCollection;
 		}
-		if (pluralAttribute.getOneToMany() != null) {
-			entity.getAttributes().getOneToMany().add( transferOneToManyAttribute(
-					pluralAttribute, collectionTypeName ) );
-		}
-		if (pluralAttribute.getManyToMany() != null) {
-			entity.getAttributes().getManyToMany().add( transferManyToManyAttribute(
-					pluralAttribute, collectionTypeName ) );
-		}
-	}
-	
-	private void transferListAttribute(JaxbEntity entity, JaxbListElement pluralAttribute) {
-		if (pluralAttribute.getElement() != null) {
-			entity.getAttributes().getElementCollection().add( transferElementCollection(
-					pluralAttribute.getName(), "list", pluralAttribute.getElement() ) );
-		}
-		if (pluralAttribute.getOneToMany() != null) {
-			final JaxbOneToMany o2m = transferOneToManyAttribute( pluralAttribute, "list" );
-			transferListIndex( o2m, pluralAttribute );
+		else if (pluralAttribute.getOneToMany() != null) {
+			final JaxbOneToMany o2m = transferOneToManyAttribute( pluralAttribute, collectionTypeName );
 			entity.getAttributes().getOneToMany().add( o2m );
+			collection = o2m;
 		}
-		if (pluralAttribute.getManyToMany() != null) {
-			final JaxbManyToMany m2m = transferManyToManyAttribute( pluralAttribute, "list" );
-			transferListIndex( m2m, pluralAttribute );
+		else if (pluralAttribute.getManyToMany() != null) {
+			final JaxbManyToMany m2m = transferManyToManyAttribute( pluralAttribute, collectionTypeName );
 			entity.getAttributes().getManyToMany().add( m2m );
+			collection = m2m;
 		}
+		
+		if (collection != null) {
+			for (JaxbFilterElement hbmFilter : pluralAttribute.getFilter()) {
+				// TODO: How to set filter on collections in unified xml?
+				throw new MappingException( "HBM transformation: Filters within collections are not yet supported." );
+			}
+		}
+		
+		return collection;
 	}
 	
 	private void transferListIndex(CollectionAttribute list, JaxbListElement pluralAttribute) {
@@ -1205,25 +1219,6 @@ public class HbmXmlTransformer {
 			// TODO: multiple columns?
 			orderColumn.setName( pluralAttribute.getListIndex().getColumnAttribute() );
 			list.setOrderColumn( orderColumn );
-		}
-	}
-	
-	private void transferMapAttribute(JaxbEntity entity, JaxbMapElement pluralAttribute) {
-		if (pluralAttribute.getElement() != null) {
-			final JaxbElementCollection collection = transferElementCollection(
-					pluralAttribute.getName(), "map", pluralAttribute.getElement() );
-			transferMapKey( collection, pluralAttribute );
-			entity.getAttributes().getElementCollection().add( collection );
-		}
-		if (pluralAttribute.getOneToMany() != null) {
-			final JaxbOneToMany o2m = transferOneToManyAttribute( pluralAttribute, "map" );
-			transferMapKey( o2m, pluralAttribute );
-			entity.getAttributes().getOneToMany().add( o2m );
-		}
-		if (pluralAttribute.getManyToMany() != null) {
-			final JaxbManyToMany m2m = transferManyToManyAttribute( pluralAttribute, "map" );
-			transferMapKey( m2m, pluralAttribute );
-			entity.getAttributes().getManyToMany().add( m2m );
 		}
 	}
 	
@@ -1516,6 +1511,19 @@ public class HbmXmlTransformer {
 			default:
 				return JaxbOnDeleteType.NO_ACTION;
 		}
+	}
+	
+	private JaxbHbmFilter convert(JaxbFilterElement hbmFilter) {
+		final JaxbHbmFilter filter = new JaxbHbmFilter();
+		final boolean autoAliasInjection = hbmFilter.getAutoAliasInjection() == null ? true
+				: hbmFilter.getAutoAliasInjection().equalsIgnoreCase( "true" );
+		filter.setAutoAliasInjection( autoAliasInjection );
+		filter.setConditionAttribute( hbmFilter.getCondition() );
+		filter.setName( hbmFilter.getName() );
+		for (Serializable content : hbmFilter.getContent()) {
+			filter.getContent().add( content );
+		}
+		return filter;
 	}
 	
 	private String getFqClassName(String className) {

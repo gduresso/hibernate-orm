@@ -29,6 +29,8 @@ import java.util.List;
 
 import org.hibernate.internal.util.collections.CollectionHelper;
 import org.hibernate.metamodel.source.internal.annotations.util.HibernateDotNames;
+import org.hibernate.metamodel.source.internal.jaxb.JaxbHbmFilterDef;
+import org.hibernate.metamodel.source.internal.jaxb.JaxbHbmFilterDef.JaxbFilterParam;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbNamedNativeQuery;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbNamedQuery;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbQueryHint;
@@ -72,6 +74,9 @@ public class GlobalAnnotationMocker extends AbstractMocker {
 		}
 		if ( !globalAnnotations.getSqlResultSetMappingMap().isEmpty() ) {
 			parseSqlResultSetMappings( globalAnnotations.getSqlResultSetMappingMap().values() );
+		}
+		if ( !globalAnnotations.getFilteDefMap().isEmpty() ) {
+			parseFilterDefs( globalAnnotations.getFilteDefMap().values() );
 		}
 		indexBuilder.finishGlobalConfigurationMocking( globalAnnotations );
 	}
@@ -308,6 +313,47 @@ public class GlobalAnnotationMocker extends AbstractMocker {
 						TABLE_GENERATOR, null, annotationValueList
 
 				);
+	}
+	
+	private void parseFilterDefs(Collection<JaxbHbmFilterDef> filterDefs) {
+		if (! filterDefs.isEmpty() ) {
+			AnnotationValue[] filterDefAnnotations = new AnnotationValue[filterDefs.size()];
+			int i = 0;
+			for ( JaxbHbmFilterDef filterDef : filterDefs ) {
+				List<AnnotationValue> annotationValueList = new ArrayList<AnnotationValue>();
+				MockHelper.stringValue( "name", filterDef.getName(), annotationValueList );
+				MockHelper.stringValue( "defaultCondition", filterDef.getCondition(), annotationValueList );
+				nestedFilterParams( filterDef.getFilterParam(), annotationValueList );
+				
+				AnnotationInstance annotationInstance = create(
+						HibernateDotNames.FILTER_DEF, null, annotationValueList );
+				filterDefAnnotations[i++] = MockHelper.nestedAnnotationValue( "", annotationInstance );
+			}
+			
+			List<AnnotationValue> annotationValueList = new ArrayList<AnnotationValue>();
+			MockHelper.addToCollectionIfNotNull( annotationValueList,
+					AnnotationValue.createArrayValue( "value", filterDefAnnotations ) );
+			
+			create( HibernateDotNames.FILTER_DEFS, null, annotationValueList );
+		}
+	}
+	
+	private void nestedFilterParams(List<JaxbFilterParam> filterParams, List<AnnotationValue> annotationValueList) {
+		if (! filterParams.isEmpty() ) {
+			AnnotationValue[] filterParamAnnotations = new AnnotationValue[filterParams.size()];
+			int i = 0;
+			for ( JaxbFilterParam filterParam : filterParams ) {
+				List<AnnotationValue> filterParamannotationValueList = new ArrayList<AnnotationValue>();
+				MockHelper.stringValue( "name", filterParam.getName(), filterParamannotationValueList );
+				MockHelper.stringValue( "type", filterParam.getType(), filterParamannotationValueList );
+				
+				AnnotationInstance annotationInstance = create(
+						HibernateDotNames.PARAM_DEF, null, filterParamannotationValueList );
+				filterParamAnnotations[i++] = MockHelper.nestedAnnotationValue( "", annotationInstance );
+			}
+			MockHelper.addToCollectionIfNotNull( annotationValueList,
+					AnnotationValue.createArrayValue( "parameters", filterParamAnnotations ) );
+		}
 	}
 
 	@Override

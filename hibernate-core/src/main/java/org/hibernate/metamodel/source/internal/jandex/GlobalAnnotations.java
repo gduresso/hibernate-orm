@@ -35,10 +35,12 @@ import org.hibernate.internal.CoreLogging;
 import org.hibernate.internal.CoreMessageLogger;
 import org.hibernate.internal.util.StringHelper;
 import org.hibernate.internal.util.collections.CollectionHelper;
+import org.hibernate.metamodel.source.internal.annotations.util.HibernateDotNames;
 import org.hibernate.metamodel.source.internal.annotations.util.JPADotNames;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbAttributes;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbEntity;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbEntityMappings;
+import org.hibernate.metamodel.source.internal.jaxb.JaxbHbmFilterDef;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbId;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbNamedNativeQuery;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbNamedQuery;
@@ -47,7 +49,6 @@ import org.hibernate.metamodel.source.internal.jaxb.JaxbSqlResultSetMapping;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbTableGenerator;
 import org.hibernate.metamodel.source.internal.jaxb.SchemaAware;
 import org.hibernate.metamodel.source.spi.MappingException;
-
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationValue;
 import org.jboss.jandex.DotName;
@@ -55,6 +56,7 @@ import org.jboss.jandex.DotName;
 /**
  * @author Strong Liu
  */
+// TODO: Much of this class is unnecessary -- use simple lists and let duplication be checked later on?
 public class GlobalAnnotations implements JPADotNames {
 	private static final CoreMessageLogger LOG = CoreLogging.messageLogger( GlobalAnnotations.class );
 
@@ -65,6 +67,7 @@ public class GlobalAnnotations implements JPADotNames {
 	private final Map<String, JaxbSqlResultSetMapping> sqlResultSetMappingMap = new HashMap<String, JaxbSqlResultSetMapping>();
 	private final Map<DotName, List<AnnotationInstance>> annotationInstanceMap = new HashMap<DotName, List<AnnotationInstance>>();
 	private final List<AnnotationInstance> indexedAnnotationInstanceList = new ArrayList<AnnotationInstance>();
+	private final Map<String, JaxbHbmFilterDef> filterDefMap = new HashMap<String, JaxbHbmFilterDef>();
 	//---------------------------
 	private final Set<String> defaultNamedNativeQueryNames = new HashSet<String>();
 	private final Set<String> defaultNamedQueryNames = new HashSet<String>();
@@ -103,7 +106,8 @@ public class GlobalAnnotations implements JPADotNames {
 				&& namedNativeQueryMap.isEmpty()
 				&& sequenceGeneratorMap.isEmpty()
 				&& tableGeneratorMap.isEmpty()
-				&& sqlResultSetMappingMap.isEmpty() );
+				&& sqlResultSetMappingMap.isEmpty()
+				&& filterDefMap.isEmpty() );
 	}
 
 	Map<String, JaxbNamedNativeQuery> getNamedNativeQueryMap() {
@@ -124,6 +128,10 @@ public class GlobalAnnotations implements JPADotNames {
 
 	Map<String, JaxbTableGenerator> getTableGeneratorMap() {
 		return tableGeneratorMap;
+	}
+
+	Map<String, JaxbHbmFilterDef> getFilteDefMap() {
+		return filterDefMap;
 	}
 
 
@@ -150,7 +158,8 @@ public class GlobalAnnotations implements JPADotNames {
 						( annName.equals( SEQUENCE_GENERATOR ) && !sequenceGeneratorMap.containsKey( name ) ) ||
 						( annName.equals( NAMED_QUERY ) && !namedQueryMap.containsKey( name ) ) ||
 						( annName.equals( NAMED_NATIVE_QUERY ) && !namedNativeQueryMap.containsKey( name ) ) ||
-						( annName.equals( SQL_RESULT_SET_MAPPING ) && !sqlResultSetMappingMap.containsKey( name ) );
+						( annName.equals( SQL_RESULT_SET_MAPPING ) && !sqlResultSetMappingMap.containsKey( name ) ) ||
+						( annName.equals( HibernateDotNames.FILTER_DEF ) && !filterDefMap.containsKey( name ) );
 			}
 		}
 		if ( isNotExist ) {
@@ -178,6 +187,11 @@ public class GlobalAnnotations implements JPADotNames {
 		for ( JaxbSqlResultSetMapping sqlResultSetMapping : entityMappings.getSqlResultSetMapping() ) {
 			put( sqlResultSetMapping );
 			defaultSqlResultSetMappingNames.add( sqlResultSetMapping.getName() );
+		}
+		for ( JaxbHbmFilterDef filterDef : entityMappings.getFilterDef() ) {
+			if (filterDef != null) {
+				filterDefMap.put( filterDef.getName(), filterDef );
+			}
 		}
 	}
 
