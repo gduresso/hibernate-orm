@@ -1285,6 +1285,8 @@ public class HbmXmlTransformer {
 			if (hbmKey.getColumn().isEmpty()) {
 				final JaxbJoinColumn joinColumn = new JaxbJoinColumn();
 				joinColumn.setName( hbmKey.getColumnAttribute() );
+				joinColumn.setNullable( hbmKey.isNotNull() == null ? null : !hbmKey.isNotNull() );
+				joinColumn.setUnique( hbmKey.isUnique() );
 				if (! StringHelper.isEmpty( hbmKey.getPropertyRef() )) {
 					joinColumn.setReferencedColumnName( hbmKey.getPropertyRef() );
 				}
@@ -1338,10 +1340,8 @@ public class HbmXmlTransformer {
 				}
 			}
 			else {
-				// TODO: handle other JaxbKeyElement props
 				final JaxbJoinColumn joinColumn = new JaxbJoinColumn();
 				joinColumn.setName( columnName );
-				// TODO: Handle other JaxbJoinColumn props
 				final JaxbJoinColumn inverseJoinColumn = new JaxbJoinColumn();
 				if (StringHelper.isEmpty( hbmM2M.getColumnAttribute() )) {
 					inverseJoinColumn.setName( Collection.DEFAULT_ELEMENT_COLUMN_NAME );
@@ -1408,12 +1408,21 @@ public class HbmXmlTransformer {
 	}
 	
 	// ToOne
-	// TODO: Not very confident -- some logic is pulled from HbmBinder, but seems off.
 	private void transferFetchable(JaxbLazyAttributeWithNoProxy hbmLazy, JaxbFetchStyleAttribute hbmFetch,
 			JaxbOuterJoinAttribute hbmOuterJoin, Boolean constrained, FetchableAttribute fetchable) {
 		FetchType laziness = FetchType.LAZY;
 		FetchMode fetch = FetchMode.SELECT;
 		
+		if (hbmLazy != null) {
+			if (hbmLazy.equals( JaxbLazyAttributeWithNoProxy.FALSE )) {
+				laziness = FetchType.EAGER;
+			}
+			else if (hbmLazy.equals( JaxbLazyAttributeWithNoProxy.NO_PROXY )) {
+				// TODO: @LazyToOne(LazyToOneOption.PROXY) or @LazyToOne(LazyToOneOption.NO_PROXY)
+			}
+		}
+		
+		// allow fetch style to override laziness, if necessary
 		if (constrained != null && ! constrained) {
 			// NOTE SPECIAL CASE: one-to-one constrained=false cannot be proxied, so default to join and non-lazy
 			laziness = FetchType.EAGER;
@@ -1421,21 +1430,9 @@ public class HbmXmlTransformer {
 		}
 		else {
 			if (hbmFetch == null) {
-				if (hbmOuterJoin == null) {
-					if (hbmLazy != null) {
-						if (hbmLazy.equals( JaxbLazyAttributeWithNoProxy.FALSE )) {
-							laziness = FetchType.EAGER;
-						}
-						else if (hbmLazy.equals( JaxbLazyAttributeWithNoProxy.NO_PROXY )) {
-							// TODO: @LazyToOne(LazyToOneOption.PROXY) or @LazyToOne(LazyToOneOption.NO_PROXY)
-						}
-					}
-				}
-				else {
-					if (hbmOuterJoin.equals( JaxbOuterJoinAttribute.TRUE )) {
-						laziness = FetchType.EAGER;
-						fetch = FetchMode.JOIN;
-					}
+				if (hbmOuterJoin != null && hbmOuterJoin.equals( JaxbOuterJoinAttribute.TRUE )) {
+					laziness = FetchType.EAGER;
+					fetch = FetchMode.JOIN;
 				}
 			}
 			else {
@@ -1451,28 +1448,25 @@ public class HbmXmlTransformer {
 	}
 	
 	// ToMany
-	// TODO: Not very confident -- some logic is pulled from HbmBinder, but seems off.
 	private void transferFetchable(JaxbLazyAttributeWithExtra hbmLazy, JaxbFetchAttributeWithSubselect hbmFetch,
 			JaxbOuterJoinAttribute hbmOuterJoin, FetchableAttribute fetchable) {
 		FetchType laziness = FetchType.LAZY;
 		FetchMode fetch = FetchMode.SELECT;
 		
-		if (hbmFetch == null) {
-			if (hbmOuterJoin == null) {
-				if (hbmLazy != null) {
-					if (hbmLazy.equals( JaxbLazyAttributeWithExtra.FALSE )) {
-						laziness = FetchType.EAGER;
-					}
-					else if (hbmLazy.equals( JaxbLazyAttributeWithExtra.EXTRA )) {
-						// TODO
-					}
-				}
+		if (hbmLazy != null) {
+			if (hbmLazy.equals( JaxbLazyAttributeWithExtra.EXTRA )) {
+				throw new MappingException( "HBM transformation: extra lazy not yet supported." );
 			}
-			else {
-				if (hbmOuterJoin.equals( JaxbOuterJoinAttribute.TRUE )) {
-					laziness = FetchType.EAGER;
-					fetch = FetchMode.JOIN;
-				}
+			else if (hbmLazy.equals( JaxbLazyAttributeWithExtra.FALSE )) {
+				laziness = FetchType.EAGER;
+			}
+		}
+		
+		// allow fetch style to override laziness, if necessary
+		if (hbmFetch == null) {
+			if (hbmOuterJoin != null && hbmOuterJoin.equals( JaxbOuterJoinAttribute.TRUE )) {
+				laziness = FetchType.EAGER;
+				fetch = FetchMode.JOIN;
 			}
 		}
 		else {
@@ -1481,7 +1475,7 @@ public class HbmXmlTransformer {
 				fetch = FetchMode.JOIN;
 			}
 			else if (hbmFetch.equals( JaxbFetchAttributeWithSubselect.SUBSELECT )) {
-				// TODO
+				fetch = FetchMode.SUBSELECT;
 			}
 		}
 		
