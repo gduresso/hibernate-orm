@@ -232,6 +232,7 @@ public class MockHelper {
 			addIfNotNull( cascadeType.getCascadeSaveUpdate(), enumList , org.hibernate.annotations.CascadeType.SAVE_UPDATE );
 			addIfNotNull( cascadeType.getCascadeReplicate(), enumList , org.hibernate.annotations.CascadeType.REPLICATE );
 			addIfNotNull( cascadeType.getCascadeLock(), enumList , org.hibernate.annotations.CascadeType.LOCK );
+			addIfNotNull( cascadeType.getCascadeDelete(), enumList , org.hibernate.annotations.CascadeType.DELETE );
 		}
 		if ( !enumList.isEmpty() ) {
 			MockHelper.enumArrayValue( name, JPADotNames.CASCADE_TYPE, enumList, annotationValueList );

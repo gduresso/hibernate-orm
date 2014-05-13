@@ -1064,6 +1064,8 @@ public class HbmXmlTransformer {
 			}
 			joinColumn.setNullable( hbmM2O.isNotNull() == null ? null : !hbmM2O.isNotNull() );
 			joinColumn.setUnique( hbmM2O.isUnique() );
+			joinColumn.setInsertable( hbmM2O.isInsert() );
+			joinColumn.setUpdatable( hbmM2O.isUpdate() );
 			m2o.getJoinColumn().add( joinColumn );
 		}
 		else {
@@ -1072,6 +1074,8 @@ public class HbmXmlTransformer {
 				joinColumn.setName( hbmColumn.getName() );
 				joinColumn.setNullable( hbmColumn.isNotNull() == null ? null : !hbmColumn.isNotNull() );
 				joinColumn.setUnique( hbmColumn.isUnique() );
+				joinColumn.setInsertable( hbmM2O.isInsert() );
+				joinColumn.setUpdatable( hbmM2O.isUpdate() );
 				m2o.getJoinColumn().add( joinColumn );
 			}
 		}
@@ -1083,9 +1087,7 @@ public class HbmXmlTransformer {
 		else {
 			m2o.setTargetEntity( hbmM2O.getClazz() );
 		}
-
 		transferFetchable( hbmM2O.getLazy(), hbmM2O.getFetch(), hbmM2O.getOuterJoin(), null, m2o );
-		
 		return m2o;
 	}
 
@@ -1393,6 +1395,9 @@ public class HbmXmlTransformer {
 				}
 				if (hbmCascade.contains( "lock" )) {
 					cascadeType.setCascadeLock( new JaxbEmptyType() );
+				}
+				if (hbmCascade.contains( "delete" )) {
+					cascadeType.setCascadeDelete( new JaxbEmptyType() );
 				}
 			}
 		}
