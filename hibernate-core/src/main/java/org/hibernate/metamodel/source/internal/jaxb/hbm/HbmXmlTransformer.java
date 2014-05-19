@@ -947,9 +947,11 @@ public class HbmXmlTransformer {
 		if ( StringHelper.isNotEmpty( hbmProp.getFormulaAttribute() ) ) {
 			basic.getColumnOrFormula().add( hbmProp.getFormulaAttribute() );
 		}
-		else if ( StringHelper.isNotEmpty( hbmProp.getColumnAttribute() ) ) {
+		else if ( StringHelper.isNotEmpty( hbmProp.getColumnAttribute() )
+				|| hbmProp.getLength() != null ) {
 			final JaxbColumn column = new JaxbColumn();
 			column.setName( hbmProp.getColumnAttribute() );
+			column.setLength( hbmProp.getLength() );
 			basic.getColumnOrFormula().add( column );
 		}
 		else if ( !hbmProp.getFormula().isEmpty() ) {
