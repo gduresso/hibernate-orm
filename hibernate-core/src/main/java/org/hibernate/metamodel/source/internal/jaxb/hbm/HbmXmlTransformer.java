@@ -596,6 +596,17 @@ public class HbmXmlTransformer {
 			}
 		}
 		
+		if (! hbmClass.getUnionSubclass().isEmpty()) {
+			for (JaxbUnionSubclassElement hbmSubclass : hbmClass.getUnionSubclass()) {
+				entity.setInheritance( new JaxbInheritance() );
+				entity.getInheritance().setStrategy( JaxbInheritanceType.UNION_SUBCLASS );
+				
+				final JaxbEntity subclassEntity = new JaxbEntity();
+				ormRoot.getEntity().add( subclassEntity );
+				transferUnionSubclass( hbmSubclass, subclassEntity );
+			}
+		}
+		
 		if (! hbmClass.getSubclass().isEmpty()) {
 			for (JaxbSubclassElement hbmSubclass : hbmClass.getSubclass()) {
 				final JaxbEntity subclassEntity = new JaxbEntity();
@@ -631,6 +642,10 @@ public class HbmXmlTransformer {
 	}
 
 	private void transferJoinedSubclass(JaxbJoinedSubclassElement hbmSubclass, JaxbEntity subclassEntity) {
+		if (! StringHelper.isEmpty( hbmSubclass.getProxy() )) {
+			// TODO
+			throw new MappingException( "HBM transformation: proxy attributes not yet supported" );
+		}
 		transferEntityElement( hbmSubclass, subclassEntity );
 		if (hbmSubclass.getKey() != null) {
 			final JaxbPrimaryKeyJoinColumn joinColumn = new JaxbPrimaryKeyJoinColumn();
@@ -639,6 +654,16 @@ public class HbmXmlTransformer {
 			subclassEntity.getPrimaryKeyJoinColumn().add( joinColumn );
 		}
 		transferEntityElementAttributes( subclassEntity, hbmSubclass );
+		
+		if (! hbmSubclass.getJoinedSubclass().isEmpty()) {
+			subclassEntity.setInheritance( new JaxbInheritance() );
+			subclassEntity.getInheritance().setStrategy( JaxbInheritanceType.JOINED );
+			for (JaxbJoinedSubclassElement nestedHbmSubclass : hbmSubclass.getJoinedSubclass()) {
+				final JaxbEntity nestedSubclassEntity = new JaxbEntity();
+				ormRoot.getEntity().add( nestedSubclassEntity );
+				transferJoinedSubclass( nestedHbmSubclass, nestedSubclassEntity );
+			}
+		}
 	}
 
 	private JaxbHbmCustomSqlCheckEnum convert(JaxbCheckAttribute check) {
@@ -1171,8 +1196,23 @@ public class HbmXmlTransformer {
 		}
 	}
 
-	private void transferUnionSubclass(JaxbUnionSubclassElement hbmSubclass, JaxbEntity entity) {
-		// todo : implement
+	private void transferUnionSubclass(JaxbUnionSubclassElement hbmSubclass, JaxbEntity subclassEntity) {
+		if (! StringHelper.isEmpty( hbmSubclass.getProxy() )) {
+			// TODO
+			throw new MappingException( "HBM transformation: proxy attributes not yet supported" );
+		}
+		transferEntityElement( hbmSubclass, subclassEntity );
+		transferEntityElementAttributes( subclassEntity, hbmSubclass );
+		
+		if (! hbmSubclass.getUnionSubclass().isEmpty()) {
+			subclassEntity.setInheritance( new JaxbInheritance() );
+			subclassEntity.getInheritance().setStrategy( JaxbInheritanceType.UNION_SUBCLASS );
+			for (JaxbUnionSubclassElement nestedHbmSubclass : hbmSubclass.getUnionSubclass()) {
+				final JaxbEntity nestedSubclassEntity = new JaxbEntity();
+				ormRoot.getEntity().add( nestedSubclassEntity );
+				transferUnionSubclass( nestedHbmSubclass, nestedSubclassEntity );
+			}
+		}
 	}
 	
 	private void transferCollectionAttributes(JaxbEntity entity, EntityElement hbmClass) {
