@@ -1085,7 +1085,18 @@ public class HbmXmlTransformer {
 		m2o.setHbmCascade( convertCascadeType( hbmM2O.getCascade() ) );
 		m2o.setForeignKey( new JaxbForeignKey() );
 		m2o.getForeignKey().setName( hbmM2O.getForeignKey() );
-		if (hbmM2O.getColumn().isEmpty()) {
+		if (! hbmM2O.getColumn().isEmpty()) {
+			for ( JaxbColumnElement hbmColumn : hbmM2O.getColumn() ) {
+				final JaxbJoinColumn joinColumn = new JaxbJoinColumn();
+				joinColumn.setName( hbmColumn.getName() );
+				joinColumn.setNullable( hbmColumn.isNotNull() == null ? null : !hbmColumn.isNotNull() );
+				joinColumn.setUnique( hbmColumn.isUnique() );
+				joinColumn.setInsertable( hbmM2O.isInsert() );
+				joinColumn.setUpdatable( hbmM2O.isUpdate() );
+				m2o.getJoinColumn().add( joinColumn );
+			}
+		}
+		else {
 			final JaxbJoinColumn joinColumn = new JaxbJoinColumn();
 			if (StringHelper.isEmpty( hbmM2O.getColumnAttribute() )) {
 				// AbstractBasicBindingTests seems to imply this was the case
@@ -1102,17 +1113,6 @@ public class HbmXmlTransformer {
 			joinColumn.setInsertable( hbmM2O.isInsert() );
 			joinColumn.setUpdatable( hbmM2O.isUpdate() );
 			m2o.getJoinColumn().add( joinColumn );
-		}
-		else {
-			for ( JaxbColumnElement hbmColumn : hbmM2O.getColumn() ) {
-				final JaxbJoinColumn joinColumn = new JaxbJoinColumn();
-				joinColumn.setName( hbmColumn.getName() );
-				joinColumn.setNullable( hbmColumn.isNotNull() == null ? null : !hbmColumn.isNotNull() );
-				joinColumn.setUnique( hbmColumn.isUnique() );
-				joinColumn.setInsertable( hbmM2O.isInsert() );
-				joinColumn.setUpdatable( hbmM2O.isUpdate() );
-				m2o.getJoinColumn().add( joinColumn );
-			}
 		}
 		m2o.setName( hbmM2O.getName() );
 		m2o.setOptional( hbmM2O.isNotNull() == null ? true : !hbmM2O.isNotNull() );
@@ -1134,7 +1134,16 @@ public class HbmXmlTransformer {
 		m2o.setFetch( convert( hbmM2O.getLazy() ) );
 		m2o.setForeignKey( new JaxbForeignKey() );
 		m2o.getForeignKey().setName( hbmM2O.getForeignKey() );
-		if (hbmM2O.getColumn().isEmpty()) {
+		if (! hbmM2O.getColumn().isEmpty()) {
+			for ( JaxbColumnElement hbmColumn : hbmM2O.getColumn() ) {
+				final JaxbJoinColumn joinColumn = new JaxbJoinColumn();
+				joinColumn.setName( hbmColumn.getName() );
+				joinColumn.setNullable( hbmColumn.isNotNull() == null ? null : !hbmColumn.isNotNull() );
+				joinColumn.setUnique( hbmColumn.isUnique() );
+				m2o.getJoinColumn().add( joinColumn );
+			}
+		}
+		else {
 			final JaxbJoinColumn joinColumn = new JaxbJoinColumn();
 			if (StringHelper.isEmpty( hbmM2O.getColumnAttribute() )) {
 				// AbstractBasicBindingTests seems to imply this was the case
@@ -1144,15 +1153,6 @@ public class HbmXmlTransformer {
 				joinColumn.setName( hbmM2O.getColumnAttribute() );
 			}
 			m2o.getJoinColumn().add( joinColumn );
-		}
-		else {
-			for ( JaxbColumnElement hbmColumn : hbmM2O.getColumn() ) {
-				final JaxbJoinColumn joinColumn = new JaxbJoinColumn();
-				joinColumn.setName( hbmColumn.getName() );
-				joinColumn.setNullable( hbmColumn.isNotNull() == null ? null : !hbmColumn.isNotNull() );
-				joinColumn.setUnique( hbmColumn.isUnique() );
-				m2o.getJoinColumn().add( joinColumn );
-			}
 		}
 		m2o.setName( hbmM2O.getName() );
 		if ( StringHelper.isNotEmpty( hbmM2O.getEntityName() ) ) {
@@ -1217,35 +1217,35 @@ public class HbmXmlTransformer {
 	
 	private void transferCollectionAttributes(JaxbEntity entity, EntityElement hbmClass) {
 		for (JaxbSetElement hbmSet : hbmClass.getSet()) {
-			transferCollectionAttribute( entity, hbmSet, "set" );
+			transferCollectionAttribute( entity, hbmSet, "set", hbmSet.getOrderBy() );
 		}
 		
 		for (JaxbBagElement hbmBag : hbmClass.getBag()) {
-			transferCollectionAttribute( entity, hbmBag, "bag" );
+			transferCollectionAttribute( entity, hbmBag, "bag", hbmBag.getOrderBy() );
 		}
 		
 		for (JaxbListElement hbmList : hbmClass.getList()) {
-			final CollectionAttribute list = transferCollectionAttribute( entity, hbmList, "list" );
+			final CollectionAttribute list = transferCollectionAttribute( entity, hbmList, "list", null );
 			transferListIndex( list, hbmList );
 		}
 		
 		for (JaxbMapElement hbmMap : hbmClass.getMap()) {
-			final CollectionAttribute map = transferCollectionAttribute( entity, hbmMap, "map" );
+			final CollectionAttribute map = transferCollectionAttribute( entity, hbmMap, "map", hbmMap.getOrderBy() );
 			transferMapKey( map, hbmMap );
 		}
 	}
 	
 	private CollectionAttribute transferCollectionAttribute(JaxbEntity entity, PluralAttributeElement pluralAttribute,
-			String collectionTypeName) {
+			String collectionTypeName, String orderBy) {
 		CollectionAttribute collection = null;
 		if (pluralAttribute.getElement() != null) {
 			final JaxbElementCollection elementCollection = transferElementCollection(
-					pluralAttribute.getName(), collectionTypeName, pluralAttribute.getElement() );
+					pluralAttribute, collectionTypeName, orderBy );
 			entity.getAttributes().getElementCollection().add( elementCollection );
 			collection = elementCollection;
 		}
 		else if (pluralAttribute.getOneToMany() != null) {
-			final JaxbOneToMany o2m = transferOneToManyAttribute( pluralAttribute, collectionTypeName );
+			final JaxbOneToMany o2m = transferOneToManyAttribute( pluralAttribute, collectionTypeName, orderBy );
 			entity.getAttributes().getOneToMany().add( o2m );
 			collection = o2m;
 		}
@@ -1303,10 +1303,11 @@ public class HbmXmlTransformer {
 		}
 	}
 	
-	private JaxbElementCollection transferElementCollection(String propertyName, String collectionTypeName,
-			JaxbElementElement hbmElement) {
+	private JaxbElementCollection transferElementCollection(
+			PluralAttributeElement pluralAttribute, String collectionTypeName, String orderBy) {
+		final JaxbElementElement hbmElement = pluralAttribute.getElement();
 		final JaxbElementCollection element = new JaxbElementCollection();
-		element.setName( propertyName );
+		element.setName( pluralAttribute.getName() );
 		final JaxbColumn column = new JaxbColumn();
 		column.setName( hbmElement.getColumnAttribute() );
 		element.setColumn( column );
@@ -1316,10 +1317,12 @@ public class HbmXmlTransformer {
 		final JaxbHbmType collectionType = new JaxbHbmType();
 		collectionType.setName( collectionTypeName );
 		element.setCollectionType( collectionType );
+		element.setOrderBy( orderBy );
 		return element;
 	}
 
-	private JaxbOneToMany transferOneToManyAttribute(PluralAttributeElement pluralAttribute, String collectionTypeName) {
+	private JaxbOneToMany transferOneToManyAttribute(
+			PluralAttributeElement pluralAttribute, String collectionTypeName, String orderBy) {
 		final JaxbOneToManyElement hbmO2M = pluralAttribute.getOneToMany();
 		final JaxbOneToMany o2m = new JaxbOneToMany();
 		final JaxbHbmType collectionType = new JaxbHbmType();
@@ -1334,7 +1337,16 @@ public class HbmXmlTransformer {
 		o2m.setInverse( pluralAttribute.isInverse() );
 		if (pluralAttribute.getKey() != null) {
 			final JaxbKeyElement hbmKey = pluralAttribute.getKey();
-			if (hbmKey.getColumn().isEmpty()) {
+			if (! hbmKey.getColumn().isEmpty()) {
+				for ( JaxbColumnElement hbmColumn : hbmKey.getColumn() ) {
+					final JaxbJoinColumn joinColumn = new JaxbJoinColumn();
+					joinColumn.setName( hbmColumn.getName() );
+					joinColumn.setNullable( hbmColumn.isNotNull() == null ? null : !hbmColumn.isNotNull() );
+					joinColumn.setUnique( hbmColumn.isUnique() );
+					o2m.getJoinColumn().add( joinColumn );
+				}
+			}
+			else {
 				final JaxbJoinColumn joinColumn = new JaxbJoinColumn();
 				joinColumn.setName( hbmKey.getColumnAttribute() );
 				joinColumn.setNullable( hbmKey.isNotNull() == null ? null : !hbmKey.isNotNull() );
@@ -1344,19 +1356,11 @@ public class HbmXmlTransformer {
 				}
 				o2m.getJoinColumn().add( joinColumn );
 			}
-			else {
-				for ( JaxbColumnElement hbmColumn : hbmKey.getColumn() ) {
-					final JaxbJoinColumn joinColumn = new JaxbJoinColumn();
-					joinColumn.setName( hbmColumn.getName() );
-					joinColumn.setNullable( hbmColumn.isNotNull() == null ? null : !hbmColumn.isNotNull() );
-					joinColumn.setUnique( hbmColumn.isUnique() );
-					o2m.getJoinColumn().add( joinColumn );
-				}
-			}
 			if (hbmKey.getOnDelete() != null) {
 				o2m.setOnDelete( convert( hbmKey.getOnDelete() ) );
 			}
 		}
+		o2m.setOrderBy( orderBy );
 		return o2m;
 	}
 
