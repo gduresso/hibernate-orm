@@ -1245,6 +1245,11 @@ public class HbmXmlTransformer {
 	
 	private CollectionAttribute transferCollectionAttribute(JaxbEntity entity, PluralAttributeElement pluralAttribute,
 			String collectionTypeName, String orderBy) {
+		if (pluralAttribute.getBatchSize() > 0) {
+			// TODO: New schema only defines batch-size at the class level, not collections.
+			throw new MappingException( "HBM transformation: batch-size not yet supported." );
+		}
+		
 		CollectionAttribute collection = null;
 		if (pluralAttribute.getElement() != null) {
 			final JaxbElementCollection elementCollection = transferElementCollection(
