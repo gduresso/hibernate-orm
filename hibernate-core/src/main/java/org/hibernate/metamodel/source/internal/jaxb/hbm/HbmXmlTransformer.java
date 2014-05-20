@@ -972,12 +972,12 @@ public class HbmXmlTransformer {
 		if ( StringHelper.isNotEmpty( hbmProp.getFormulaAttribute() ) ) {
 			basic.getColumnOrFormula().add( hbmProp.getFormulaAttribute() );
 		}
-		else if ( StringHelper.isNotEmpty( hbmProp.getColumnAttribute() )
-				|| hbmProp.getLength() != null ) {
-			final JaxbColumn column = new JaxbColumn();
-			column.setName( hbmProp.getColumnAttribute() );
-			column.setLength( hbmProp.getLength() );
-			basic.getColumnOrFormula().add( column );
+		else if (! hbmProp.getColumn().isEmpty()) {
+			for ( JaxbColumnElement hbmColumn : hbmProp.getColumn() ) {
+				final JaxbColumn column = new JaxbColumn();
+				transferColumn( column, hbmColumn, null, hbmProp.isInsert(), hbmProp.isUpdate() );
+				basic.getColumnOrFormula().add( column );
+			}
 		}
 		else if ( !hbmProp.getFormula().isEmpty() ) {
 			for ( String formula : hbmProp.getFormula() ) {
@@ -985,11 +985,14 @@ public class HbmXmlTransformer {
 			}
 		}
 		else {
-			for ( JaxbColumnElement hbmColumn : hbmProp.getColumn() ) {
-				final JaxbColumn column = new JaxbColumn();
-				transferColumn( column, hbmColumn, null, hbmProp.isInsert(), hbmProp.isUpdate() );
-				basic.getColumnOrFormula().add( column );
-			}
+			final JaxbColumn column = new JaxbColumn();
+			column.setName( hbmProp.getColumnAttribute() );
+			column.setLength( hbmProp.getLength() );
+			column.setNullable( hbmProp.isNotNull() == null ? null : !hbmProp.isNotNull() );
+			column.setUnique( hbmProp.isUnique() );
+			column.setInsertable( hbmProp.isInsert() );
+			column.setUpdatable( hbmProp.isUpdate() );
+			basic.getColumnOrFormula().add( column );
 		}
 		
 		return basic;
@@ -1226,12 +1229,17 @@ public class HbmXmlTransformer {
 		
 		for (JaxbListElement hbmList : hbmClass.getList()) {
 			final CollectionAttribute list = transferCollectionAttribute( entity, hbmList, "list", null );
-			transferListIndex( list, hbmList );
+			transferListIndex( list, hbmList.getListIndex() );
 		}
 		
 		for (JaxbMapElement hbmMap : hbmClass.getMap()) {
 			final CollectionAttribute map = transferCollectionAttribute( entity, hbmMap, "map", hbmMap.getOrderBy() );
 			transferMapKey( map, hbmMap );
+		}
+		
+		for (JaxbArrayElement hbmArray : hbmClass.getArray()) {
+			final CollectionAttribute array = transferCollectionAttribute( entity, hbmArray, "array", null );
+			transferListIndex( array, hbmArray.getListIndex() );
 		}
 	}
 	
@@ -1265,11 +1273,11 @@ public class HbmXmlTransformer {
 		return collection;
 	}
 	
-	private void transferListIndex(CollectionAttribute list, JaxbListElement pluralAttribute) {
-		if (pluralAttribute.getListIndex() != null) {
+	private void transferListIndex(CollectionAttribute list, JaxbListIndexElement hbmListIndex) {
+		if (hbmListIndex != null) {
 			final JaxbOrderColumn orderColumn = new JaxbOrderColumn();
 			// TODO: multiple columns?
-			orderColumn.setName( pluralAttribute.getListIndex().getColumnAttribute() );
+			orderColumn.setName( hbmListIndex.getColumnAttribute() );
 			list.setOrderColumn( orderColumn );
 		}
 	}

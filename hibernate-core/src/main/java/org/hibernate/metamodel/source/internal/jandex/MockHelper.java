@@ -43,9 +43,9 @@ import org.hibernate.internal.util.collections.CollectionHelper;
 import org.hibernate.metamodel.source.internal.annotations.util.JPADotNames;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbCacheModeType;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbCascadeType;
-import org.hibernate.metamodel.source.internal.jaxb.JaxbEmptyType;
 import org.hibernate.metamodel.source.internal.jaxb.JaxbHbmCascadeType;
 import org.hibernate.service.ServiceRegistry;
+import org.hibernate.type.ArrayType;
 import org.hibernate.type.BagType;
 import org.hibernate.type.ListType;
 import org.hibernate.type.MapType;
@@ -545,6 +545,9 @@ public class MockHelper {
 		}
 		if (collectionTypeName.equalsIgnoreCase( "map" )) {
 			collectionTypeName = MapType.class.getName();
+		}
+		if (collectionTypeName.equalsIgnoreCase( "array" )) {
+			collectionTypeName = ArrayType.class.getName();
 		}
 		return collectionTypeName;
 	}
