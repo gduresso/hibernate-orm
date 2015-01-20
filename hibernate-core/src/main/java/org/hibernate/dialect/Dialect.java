@@ -2688,7 +2688,7 @@ public abstract class Dialect implements ConversionContext {
 	}
 
 	/**
-	 * Does locking information get appended to SQL ?
+	 * Does locking information get appended to the end of the SQL statement (true)?  Or, the beginning (false)?
 	 *
 	 * @return  boolean
 	 */

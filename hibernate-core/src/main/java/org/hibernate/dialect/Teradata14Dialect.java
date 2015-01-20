@@ -47,7 +47,7 @@ public class Teradata14Dialect extends TeradataDialect {
 	/**
 	 * Constructor
 	 */
-	public Teradata13Dialect() {
+	public Teradata14Dialect() {
 		super();
 		//registerColumnType data types
 		registerColumnType( Types.BIGINT, "BIGINT" );
