@@ -176,7 +176,8 @@ class HibernateBuildPlugin implements Plugin<Project> {
 //			else {
 				// use Java 8 settings
 				task.maxHeapSize = '2G'
-				task.jvmArgs += ['-XX:MetaspaceSize=512M']
+                // TODO: This cannot be set if we're using java6Home!
+//				task.jvmArgs += ['-XX:MetaspaceSize=512M']
 //			}
 		}
 	}

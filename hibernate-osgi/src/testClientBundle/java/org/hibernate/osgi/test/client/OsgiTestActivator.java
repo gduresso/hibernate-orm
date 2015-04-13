@@ -20,13 +20,13 @@
  */
 package org.hibernate.osgi.test.client;
 
-import java.util.Hashtable;
-
+import org.hibernate.boot.model.TypeContributor;
 import org.hibernate.boot.registry.selector.StrategyRegistrationProvider;
 import org.hibernate.integrator.spi.Integrator;
-import org.hibernate.boot.model.TypeContributor;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
+
+import java.util.Hashtable;
 
 /**
  * @author Brett Meyer
@@ -50,6 +50,23 @@ public class OsgiTestActivator implements BundleActivator {
 		// register the test result service
 		testService = new TestServiceImpl(context, integrator, strategyRegistrationProvider, typeContributor);
 		context.registerService( TestService.class, testService, new Hashtable() );
+
+        DataPoint dp = new DataPoint();
+        dp.setName( "Brett" );
+        testService.saveNative( dp );
+
+        dp = testService.getNative(dp.getId());
+        System.out.println(dp.getName());
+
+        dp.setName( "Brett2" );
+        testService.updateNative( dp );
+
+        dp = testService.getNative(dp.getId());
+        System.out.println(dp.getName());
+
+        testService.deleteNative();
+
+        dp = testService.getNative(dp.getId());
 	}
 
 	@Override

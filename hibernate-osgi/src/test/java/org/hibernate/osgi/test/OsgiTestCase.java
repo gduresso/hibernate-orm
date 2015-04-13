@@ -16,17 +16,7 @@
  */
 package org.hibernate.osgi.test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-
-import java.io.InputStream;
-
 import org.hibernate.Hibernate;
-import org.hibernate.boot.registry.selector.StrategyRegistrationProvider;
-import org.hibernate.integrator.spi.Integrator;
-import org.hibernate.boot.model.TypeContributor;
 import org.hibernate.osgi.OsgiPersistenceProviderService;
 import org.hibernate.osgi.OsgiSessionFactoryService;
 import org.hibernate.osgi.test.client.DataPoint;
@@ -44,6 +34,13 @@ import org.junit.runner.RunWith;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
+
+import java.io.InputStream;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * A separate sourceset, testClientBundle, contains a persistence unit and an OSGi service interface providing
@@ -98,11 +95,27 @@ public class OsgiTestCase {
 				builder.addBundleManifestVersion( 2 );
 				builder.addImportPackages( TestService.class );
 				// ORM packages needed in the tests
-				builder.addImportPackages( Hibernate.class );
-				builder.addImportPackages( Integrator.class );
-				builder.addImportPackages( StrategyRegistrationProvider.class );
-				builder.addImportPackages( TypeContributor.class );
+//				builder.addImportPackages( Hibernate.class );
+//				builder.addImportPackages( Integrator.class );
+//				builder.addImportPackages( StrategyRegistrationProvider.class );
+//				builder.addImportPackages( TypeContributor.class );
 				builder.addImportPackages( OsgiSessionFactoryService.class );
+                builder.addImportPackages(
+                        "javassist.util.proxy",
+                        "javax.persistence",
+                        "javax.persistence.spi",
+                        "org.h2",
+                        "org.osgi.framework",
+                        "org.hibernate",
+                        "org.hibernate.boot.model",
+                        "org.hibernate.boot.registry.selector",
+                        "org.hibernate.boot.registry.selector.spi",
+                        "org.hibernate.cfg",
+                        "org.hibernate.engine.spi",
+                        "org.hibernate.integrator.spi",
+                        "org.hibernate.proxy",
+                        "org.hibernate.service",
+                        "org.hibernate.service.spi");
 				return builder.openStream();
 			}
 		} );
