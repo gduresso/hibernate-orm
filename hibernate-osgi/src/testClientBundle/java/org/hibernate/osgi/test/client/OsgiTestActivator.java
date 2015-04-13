@@ -51,22 +51,22 @@ public class OsgiTestActivator implements BundleActivator {
 		testService = new TestServiceImpl(context, integrator, strategyRegistrationProvider, typeContributor);
 		context.registerService( TestService.class, testService, new Hashtable() );
 
-        DataPoint dp = new DataPoint();
-        dp.setName( "Brett" );
-        testService.saveNative( dp );
-
-        dp = testService.getNative(dp.getId());
-        System.out.println(dp.getName());
-
-        dp.setName( "Brett2" );
-        testService.updateNative( dp );
-
-        dp = testService.getNative(dp.getId());
-        System.out.println(dp.getName());
-
-        testService.deleteNative();
-
-        dp = testService.getNative(dp.getId());
+//        DataPoint dp = new DataPoint();
+//        dp.setName( "Brett" );
+//        testService.saveNative( dp );
+//
+//        dp = testService.getNative(dp.getId());
+//        System.out.println(dp.getName());
+//
+//        dp.setName( "Brett2" );
+//        testService.updateNative( dp );
+//
+//        dp = testService.getNative(dp.getId());
+//        System.out.println(dp.getName());
+//
+//        testService.deleteNative();
+//
+//        dp = testService.getNative(dp.getId());
 	}
 
 	@Override
