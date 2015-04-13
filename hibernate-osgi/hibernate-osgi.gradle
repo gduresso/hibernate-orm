@@ -18,12 +18,6 @@ sourceSets.test {
 	runtimeClasspath += sourceSets.testClientBundle.output
 }
 
-test {
-	// for now, always disable!!
-	enabled = false
-
-}
-
 if ( project.properties.java6Home == null ) {
 	// hibernate-osgi *must* be run using Java 6 or 7.  So disable its tests if
 	// java6Home is not available
@@ -35,6 +29,7 @@ else {
 		options.forkOptions.executable = project.properties.java6Home.javacExecutable
 		options.bootClasspath = project.properties.java6Home.runtimeJar.absolutePath
 	}
+
 	compileTestClientBundleJava {
 		options.fork = true
 		options.forkOptions.executable = project.properties.java6Home.javacExecutable
@@ -42,9 +37,9 @@ else {
 	}
 
 	test {
-		executable = project.properties.java6Home
+		executable = project.properties.java6Home.javaExecutable
 		maxHeapSize = '2G'
-		jvmArgs += ['-XX:MaxPermGen=512M']
+//		jvmArgs += ['-XX:MaxPermGen=512M']
 	}
 }
 
